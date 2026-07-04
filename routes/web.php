@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BorrowingController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -11,9 +12,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ROLE BASED ACCESS
     Route::middleware(['role:admin'])->group(function () {
@@ -39,10 +38,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // PRODUCTS
     Route::resource('products', ProductController::class);
-    
+
+    //BORROWING
     Route::post('/borrow', [BorrowingController::class, 'store'])->name('borrow.store');
-    Route::post('/return/{id}', [BorrowingController::class, 'return'])->name('borrow.return');
+    Route::post('/borrowings/{id}/return', [BorrowingController::class, 'returnItem'])->name('borrow.return');
+    Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrow.index');
 });
 
 require __DIR__.'/auth.php';

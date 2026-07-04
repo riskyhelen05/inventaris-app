@@ -6,9 +6,19 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Borrowing;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BorrowingController extends Controller
 {
+    public function index()
+    {
+    $borrowings = Borrowing::with(['user', 'product'])
+        ->latest()
+        ->paginate(10);
+
+    return view('borrowings.index', compact('borrowings'));
+    }
+
     public function store(Request $request)
     {
     $request->validate([
@@ -37,23 +47,23 @@ class BorrowingController extends Controller
     return back()->with('success', 'Berhasil meminjam barang');
     }
 
-    public function return($id)
+    public function returnItem($id)
     {
-    $borrowing = Borrowing::findOrFail($id);
+    $borrowing = Borrowing::with('product')->findOrFail($id);
 
-    if ($borrowing->status == 'returned') {
-        return back()->with('error', 'Sudah dikembalikan');
+    if ($borrowing->status === 'returned') {
+        return back()->with('error', 'Barang sudah dikembalikan');
     }
 
-    // UPDATE STATUS
-    $borrowing->update([
-        'status' => 'returned',
-        'return_date' => now()
-    ]);
+    DB::transaction(function () use ($borrowing) {
+        $borrowing->update([
+            'status' => 'returned',
+            'return_date' => now()
+        ]);
 
-    // 🔥 TAMBAH STOK KEMBALI
-    $borrowing->product->increment('stock', $borrowing->quantity);
+        $borrowing->product->increment('stock', $borrowing->quantity);
+    });
 
-    return back()->with('success', 'Barang dikembalikan');
+    return back()->with('success', 'Barang berhasil dikembalikan');
     }
 }
