@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\BorrowingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -39,6 +40,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('products', ProductController::class);
+    
+    Route::post('/borrow', [BorrowingController::class, 'store'])->name('borrow.store');
+    Route::post('/return/{id}', [BorrowingController::class, 'return'])->name('borrow.return');
 });
 
 require __DIR__.'/auth.php';
