@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Helpers\ActivityLogger;
 
 class ProfileController extends Controller
 {
@@ -21,40 +22,38 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+    $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    if ($request->user()->isDirty('email')) {
+        $request->user()->email_verified_at = null;
     }
 
-    /**
-     * Delete the user's account.
-     */
+    $request->user()->save();
+
+    ActivityLogger::log('update_profile', 'User update profile');
+
+    return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
+    $request->validateWithBag('userDeletion', [
+        'password' => ['required', 'current_password'],
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        Auth::logout();
+    Auth::logout();
 
-        $user->delete();
+    $user->delete();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+    ActivityLogger::log('delete_account', 'User menghapus akun');
 
-        return Redirect::to('/');
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return Redirect::to('/');
     }
 }
