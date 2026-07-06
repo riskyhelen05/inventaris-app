@@ -1,36 +1,163 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>InventarisApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; }
+    </style>
+</head>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+<body class="bg-gray-100">
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+<div class="flex">
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white shadow-lg min-h-screen">
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+        <!-- LOGO -->
+        <div class="p-5 border-b">
+            <h1 class="text-xl font-bold text-red-600">📦 InventarisApp</h1>
         </div>
-    </body>
+
+        <!-- PROFILE -->
+        <div class="p-5 border-b flex items-center gap-3">
+            <img src="https://i.pravatar.cc/40" class="rounded-full">
+            <div>
+                <p class="font-semibold text-sm">{{ auth()->user()->name ?? 'User' }}</p>
+                <span class="text-green-500 text-xs">● Online</span>
+            </div>
+        </div>
+
+<!-- MENU -->
+<nav class="p-4 space-y-2 text-sm">
+
+    <!-- Dashboard -->
+    <a href="{{ route('dashboard') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('dashboard') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        🏠 Dashboard
+    </a>
+
+    <!-- Data Barang -->
+    <a href="{{ route('products.index') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('products.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        📦 Data Barang
+    </a>
+
+    <!-- Kategori -->
+    <a href="{{ route('categories.index') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('categories.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        🗂️ Kategori
+    </a>
+
+    <!-- Supplier -->
+    <a href="{{ route('suppliers.index') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('suppliers.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        🚚 Supplier
+    </a>
+
+    <!-- Peminjaman -->
+    <a href="{{ route('borrowings.index') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('borrowings.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        📋 Peminjaman
+    </a>
+
+    <!-- Activity Log -->
+    <a href="{{ route('activity.logs') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('activity.logs') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        📊 Activity Logs
+    </a>
+
+</nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1">
+
+        <!-- TOPBAR -->
+        <header class="bg-gradient-to-r from-red-600 to-red-500 text-white p-4 flex justify-between items-center shadow">
+
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">☰</span>
+                <h1 class="font-semibold text-lg"> {{ $header ?? 'Dashboard' }} </h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <img src="https://i.pravatar.cc/35" class="rounded-full">
+                <span>{{ auth()->user()->name ?? 'User' }}</span>
+                <button class="bg-white text-red-600 px-3 py-1 rounded text-sm">Logout</button>
+            </div>
+
+        </header>
+
+        <!-- CONTENT -->
+        <main class="p-6">
+            {{ $slot }}
+        </main>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success'))
+<script>
+Swal.fire({
+    icon:'success',
+    title:'Berhasil',
+    text:"{{ session('success') }}",
+    confirmButtonColor:'#dc2626'
+});
+</script>
+@endif
+
+@if(session('error'))
+<script>
+Swal.fire({
+    icon:'error',
+    title:'Gagal',
+    text:"{{ session('error') }}",
+    confirmButtonColor:'#dc2626'
+});
+</script>
+@endif
+
+<script>
+document.querySelectorAll('.delete-btn').forEach(button => {
+
+    button.addEventListener('click', function(){
+
+        const form = this.closest('form');
+
+        Swal.fire({
+            title:'Hapus Data?',
+            text:'Data tidak dapat dikembalikan.',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonColor:'#dc2626',
+            cancelButtonColor:'#6b7280',
+            confirmButtonText:'Ya',
+            cancelButtonText:'Batal'
+        }).then((result)=>{
+
+            if(result.isConfirmed){
+                form.submit();
+            }
+
+        });
+
+    });
+
+});
+</script>
+</body>
 </html>
