@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>InventarisApp</title>
+    <title>Sistem Informasi Inventaris Barang</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -19,7 +19,7 @@
 
         <!-- LOGO -->
         <div class="p-5 border-b">
-            <h1 class="text-xl font-bold text-red-600">📦 InventarisApp</h1>
+            <h1 class="text-xl font-bold text-red-600">📦 Inventaris Barang</h1>
         </div>
 
         <!-- PROFILE -->
@@ -55,13 +55,6 @@
         🗂️ Kategori
     </a>
 
-    <!-- Supplier -->
-    <a href="{{ route('suppliers.index') }}"
-        class="flex items-center gap-2 px-4 py-2 rounded transition
-        {{ request()->routeIs('suppliers.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
-        🚚 Supplier
-    </a>
-
     <!-- Peminjaman -->
     <a href="{{ route('borrowings.index') }}"
         class="flex items-center gap-2 px-4 py-2 rounded transition
@@ -76,7 +69,36 @@
         📊 Activity Logs
     </a>
 
+    <!-- Report -->
+    <a href="{{ route('reports.index') }}"
+        class="flex items-center gap-2 px-4 py-2 rounded transition
+        {{ request()->routeIs('reports.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+        📄 Laporan
+    </a>
+
 </nav>
+
+<hr class="my-4">
+
+<!-- My Profile -->
+<a href="{{ route('profile.edit') }}"
+    class="flex items-center gap-2 px-4 py-2 rounded transition
+    {{ request()->routeIs('profile.*') ? 'bg-red-600 text-white shadow' : 'hover:bg-red-50 hover:text-red-600' }}">
+    👤 My Profile
+</a>
+
+<!-- Logout -->
+<form method="POST" action="{{ route('logout') }}">
+    @csrf
+
+    <button
+        type="submit"
+        class="w-full flex items-center gap-2 px-4 py-2 rounded transition text-left hover:bg-red-50 hover:text-red-600">
+
+        🚪 Logout
+
+    </button>
+</form>
     </aside>
 
     <!-- MAIN -->
@@ -88,12 +110,6 @@
             <div class="flex items-center gap-3">
                 <span class="text-2xl">☰</span>
                 <h1 class="font-semibold text-lg"> {{ $header ?? 'Dashboard' }} </h1>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <img src="https://i.pravatar.cc/35" class="rounded-full">
-                <span>{{ auth()->user()->name ?? 'User' }}</span>
-                <button class="bg-white text-red-600 px-3 py-1 rounded text-sm">Logout</button>
             </div>
 
         </header>
