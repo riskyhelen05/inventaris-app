@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -90,6 +91,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->name('activity.logs');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reports
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/reports', [ReportController::class, 'index'])
+        ->name('reports.index');
+
+    Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])
+        ->name('reports.pdf');
+
+    Route::get('/reports/excel', [ReportController::class, 'exportExcel'])
+        ->name('reports.excel');
 });
 
 require __DIR__.'/auth.php';
