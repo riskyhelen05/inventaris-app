@@ -12,15 +12,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('borrowings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity');
-            $table->date('borrow_date');
-            $table->date('return_date')->nullable();
-            $table->enum('status', ['borrowed', 'returned'])->default('borrowed');
-            $table->timestamps();
-        });
+
+    $table->id();
+
+    $table->foreignId('user_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->date('borrow_date');
+
+    $table->date('return_date')->nullable();
+
+    $table->enum('status',[
+        'pending',
+        'approved',
+        'rejected',
+        'returned'
+    ])->default('pending');
+
+    $table->timestamps();
+
+});
     }
 
     /**

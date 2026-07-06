@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('borrowing_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('qty');
+            $table->integer('quantity');
             $table->timestamps();
         });
     }

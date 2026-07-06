@@ -8,20 +8,20 @@ class Borrowing extends Model
 {
     protected $fillable = [
         'user_id',
-        'product_id',
-        'quantity',
         'borrow_date',
         'return_date',
         'status'
     ];
 
+    // 🔗 relasi ke user
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function product()
+    // 🔗 relasi ke detail (INI YANG PENTING)
+    public function details()
     {
-        return $this->belongsTo(Product::class);
+        return $this->hasMany(BorrowingDetail::class);
     }
 }
