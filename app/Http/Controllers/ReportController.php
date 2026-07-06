@@ -48,18 +48,24 @@ public function index(Request $request)
 
     }
 
-    $borrowings = $query
-        ->latest()
-        ->paginate(10)
-        ->withQueryString();
+$totalBorrowing = (clone $query)->count();
 
-    $totalBorrowing = Borrowing::count();
+$totalApproved = (clone $query)
+    ->where('status', 'approved')
+    ->count();
 
-    $totalApproved = Borrowing::where('status', 'approved')->count();
+$totalReturned = (clone $query)
+    ->where('status', 'returned')
+    ->count();
 
-    $totalReturned = Borrowing::where('status', 'returned')->count();
+$totalRejected = (clone $query)
+    ->where('status', 'rejected')
+    ->count();
 
-    $totalRejected = Borrowing::where('status', 'rejected')->count();
+$borrowings = $query
+    ->latest()
+    ->paginate(10)
+    ->withQueryString();
 
     return view('reports.index', [
 
@@ -105,10 +111,10 @@ public function exportPdf(Request $request)
     return $pdf->download('laporan-peminjaman.pdf');
 }
 
-public function exportExcel()
+public function exportExcel(Request $request)
 {
     return Excel::download(
-        new BorrowingExport,
+        new BorrowingExport($request),
         'laporan_peminjaman.xlsx'
     );
 }
