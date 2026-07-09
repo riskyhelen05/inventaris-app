@@ -12,15 +12,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
+
             $table->id();
-            $table->string('kode_barang')->unique();
-            $table->string('name');
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->integer('stock')->default(0);
-            $table->string('location');
-            $table->enum('condition', ['baik', 'rusak']);
-            $table->string('image')->nullable(); // BONUS
+
+            $table->string('kode_barang', 50)->unique();
+
+            $table->string('name', 150);
+
+            $table->foreignId('category_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->unsignedInteger('stock')
+                ->default(0)
+                ->index();
+
+            $table->string('location', 100);
+
+            $table->enum('condition', [
+                'baik',
+                'rusak'
+            ])->index();
+
+            $table->string('image')->nullable();
+
             $table->timestamps();
+
         });
     }
 

@@ -19,16 +19,16 @@ return new class extends Migration
         ->constrained()
         ->cascadeOnDelete();
 
-    $table->date('borrow_date');
+    $table->date('borrow_date')->index();
 
-    $table->date('return_date')->nullable();
+    $table->date('return_date')->nullable()->index();
 
     $table->enum('status',[
         'pending',
         'approved',
         'rejected',
         'returned'
-    ])->default('pending');
+    ])->default('pending')->index();
 
     $table->timestamps();
 

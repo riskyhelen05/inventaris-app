@@ -12,10 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('borrowing_details', function (Blueprint $table) {
+
             $table->id();
-            $table->foreignId('borrowing_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity');
+
+            $table->foreignId('borrowing_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('product_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->unsignedInteger('quantity');
+
+            $table->unique([
+                'borrowing_id',
+                'product_id'
+            ]);
+
             $table->timestamps();
         });
     }
