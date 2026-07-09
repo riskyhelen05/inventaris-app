@@ -8,101 +8,216 @@ use App\Models\User;
 use App\Models\Borrowing;
 use App\Models\BorrowingDetail;
 use App\Models\ActivityLog;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function __construct()
     {
-        $query = Borrowing::query();
+        // semua user boleh lihat, tapi nanti bisa dibedakan
+        $this->middleware('auth');
+    }
 
-        // FILTER
-        if ($request->month) {
-            $query->whereMonth('borrow_date', date('m', strtotime($request->month)));
-        }
+public function index(Request $request)
+{
+    // ================= FILTER =================
+    $baseQuery = Borrowing::query();
 
-        if ($request->user) {
-            $query->where('user_id', $request->user);
-        }
+    if ($request->month) {
+        $baseQuery->whereMonth('borrow_date', date('m', strtotime($request->month)));
+    }
 
-        if ($request->product) {
-            $query->whereHas('details', function ($q) use ($request) {
-                $q->where('product_id', $request->product);
+    if ($request->user) {
+        $baseQuery->where('user_id', $request->user);
+    }
+
+    if ($request->product) {
+        $baseQuery->whereHas('details', function ($q) use ($request) {
+            $q->where('product_id', $request->product);
+        });
+    }
+
+    // ================= CHART =================
+    $months = collect([
+        1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',
+        7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec'
+    ]);
+
+    $chartRaw = (clone $baseQuery)
+        ->selectRaw('MONTH(borrow_date) as month, COUNT(*) as total')
+        ->groupBy('month')
+        ->pluck('total','month');
+
+    $chartData = $months->map(function ($name, $month) use ($chartRaw) {
+        return [
+            'date' => $name,
+            'total' => $chartRaw[$month] ?? 0
+        ];
+    })->values();
+
+    $stockData = DB::table('borrowing_details')
+    ->selectRaw('products.name as product, SUM(borrowing_details.quantity) as total')
+    ->join('products', 'borrowing_details.product_id', '=', 'products.id')
+    ->groupBy('products.name')
+    ->orderByDesc('total')
+    ->limit(5)
+    ->get()
+    ->values()
+    ->map(function ($item, $index) {
+        $item->rank = $index + 1;
+        return $item;
     });
-}
 
-        // LINE CHART
-        $chartData = $query
-            ->selectRaw('DATE(borrow_date) as date, COUNT(*) as total')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+// ================= STATISTIK =================
 
-        // PIE CHART
-        $pieData = BorrowingDetail::when($request->product, function ($q) use ($request) {
-        $q->where('product_id', $request->product);
-        })
-            ->selectRaw('product_id, SUM(quantity) as total')
-            ->groupBy('product_id')
-            ->with('product')
-            ->get()
-            ->map(fn($item) => [
-        'product' => $item->product->name ?? '-',
-        'total' => $item->total
-        ]);
+// ===== BARANG DIPINJAM (HARUS DI ATAS) =====
+$barangDipinjam = \App\Models\BorrowingDetail::join('borrowings', 'borrowings.id', '=', 'borrowing_details.borrowing_id')
+    ->where('borrowings.status', 'approved') // masih dipinjam
+    ->sum('borrowing_details.quantity');
 
-        // BAR CHART
-        $stockData = Product::select('name as product', 'stock')->get();
+// ===== BARANG =====
+$totalBarang   = \App\Models\Product::count();
+$barangTersedia = Product::sum('stock');
 
-// LOW STOCK
-$lowStocks = Product::where('stock', '<=', 5)
+$stokHabis     = \App\Models\Product::where('stock', 0)->count();
+$totalKategori = \App\Models\Product::distinct('category_id')->count('category_id');
+
+// ===== PEMINJAMAN =====
+$totalBorrowing = \App\Models\Borrowing::count();
+$totalPending   = \App\Models\Borrowing::where('status', 'pending')->count();
+$totalApproved  = \App\Models\Borrowing::where('status', 'approved')->count();
+$totalReturned  = \App\Models\Borrowing::where('status', 'returned')->count();
+$totalRejected  = \App\Models\Borrowing::where('status', 'rejected')->count();
+
+// ================= LOW STOCK =================
+$lowStocks = \App\Models\Product::where('stock', '<=', config('app.low_stock', 5))
     ->orderBy('stock')
     ->take(5)
     ->get();
 
-// TOP BORROWED
-$topBorrowed = BorrowingDetail::with('product')
-    ->selectRaw('product_id, SUM(quantity) as total')
-    ->groupBy('product_id')
-    ->orderByDesc('total')
-    ->take(5)
-    ->get();
+// ================= RECENT ACTIVITY =================
+$recentActivities = DB::table('borrowing_details')
+    ->join('borrowings', 'borrowing_details.borrowing_id', '=', 'borrowings.id')
+    ->join('users', 'borrowings.user_id', '=', 'users.id')
+    ->join('products', 'borrowing_details.product_id', '=', 'products.id')
+    ->orderByDesc('borrowing_details.created_at')
+    ->limit(5)
+    ->get([
+        'users.name as user',
+        'products.name as product',
+        'borrowing_details.quantity',
+        'borrowings.status',
+        'borrowing_details.created_at'
+    ]);
 
-// RECENT ACTIVITY
-$recentActivities = ActivityLog::with('user')
-    ->latest()
-    ->take(5)
-    ->get();
+// ================= RETURN VIEW =================
+return view('dashboard', compact(
+    'chartData',
+    'stockData',
 
-return view('dashboard', [
+    'totalBarang',     
+    'barangTersedia',
+    'barangDipinjam',
+    'stokHabis',
+    'totalKategori',
 
-    'chartData' => $chartData,
-    'pieData' => $pieData,
-    'stockData' => $stockData,
+    'totalBorrowing',
+    'totalPending',
+    'totalApproved',
+    'totalReturned',
+    'totalRejected',
 
-    'users' => User::all(),
-    'products' => Product::all(),
+    'lowStocks',
+    'recentActivities'
+));
 
-    'totalBarang' => Product::count(),
-
-    'barangDipinjam' => Borrowing::where('status','approved')->count(),
-
-    'barangTersedia' => Product::sum('stock'),
-
-    'lowStocks' => $lowStocks,
-
-    'topBorrowed' => $topBorrowed,
-
-    'recentActivities' => $recentActivities,
-
-]);
-    }
+}
 
     public function activityLogs()
     {
-    $logs = \App\Models\ActivityLog::with('user')
-        ->latest()
-        ->paginate(10);
+        $logs = ActivityLog::with('user')
+            ->latest()
+            ->paginate(10);
 
-    return view('activity_logs.index', compact('logs'));
+        return view('activity_logs.index', compact('logs'));
+    }
+
+    public function search(Request $request)
+    {
+        $keyword = $request->get('q');
+
+        if (!$keyword) {
+            return response()->json([]);
+        }
+
+        $products = Product::where('name', 'like', "%{$keyword}%")
+            ->orWhere('kode_barang', 'like', "%{$keyword}%")
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'type' => 'Barang',
+                'title' => $item->name,
+                'url' => route('products.index') . '?search=' . urlencode($item->name),
+            ]);
+
+        $categories = \App\Models\Category::where('name', 'like', "%{$keyword}%")
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'type' => 'Kategori',
+                'title' => $item->name,
+                'url' => route('categories.index') . '?search=' . urlencode($item->name),
+            ]);
+
+        $borrowings = Borrowing::with('user')
+            ->whereHas('user', fn($q) => $q->where('name', 'like', "%{$keyword}%"))
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'type' => 'Peminjaman',
+                'title' => 'Peminjaman oleh ' . optional($item->user)->name,
+                'url' => route('borrowings.index'),
+            ]);
+
+        return response()->json(
+            $products->concat($categories)->concat($borrowings)->values()
+        );
+    }
+
+    public function notifications()
+    {
+        $notifications = [];
+
+        // LOW STOCK
+        foreach (Product::where('stock', '<=', config('app.low_stock', 5))->take(5)->get() as $product) {
+            $notifications[] = [
+                'title' => 'Low Stock',
+                'message' => $product->name . ' tersisa ' . $product->stock,
+                'url' => route('products.index'),
+            ];
+        }
+
+        // hanya admin/staff lihat request
+        if (auth()->user()->hasRole(['admin','staff'])) {
+            foreach (Borrowing::with('user')
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get() as $borrow) {
+
+                $notifications[] = [
+                    'title' => 'Borrow Request',
+                    'message' => optional($borrow->user)->name . ' mengajukan peminjaman',
+                    'url' => route('borrowings.index'),
+                ];
+            }
+        }
+
+        return response()->json([
+            'count' => count($notifications),
+            'data' => $notifications,
+        ]);
     }
 }

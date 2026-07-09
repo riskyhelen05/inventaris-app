@@ -1,313 +1,213 @@
 <x-app-layout>
 
-    <div class="p-6">
+<x-slot name="header">
+    Laporan
+</x-slot>
 
-<div class="flex justify-between items-center mb-6">
+<div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-6">
 
-    <div>
+    <form method="GET" action="{{ route('reports.index') }}">
 
-        <h2 class="text-2xl font-bold text-gray-800">
-            📄 Laporan Peminjaman
-        </h2>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
 
-        <p class="text-gray-500 text-sm">
-            Daftar seluruh transaksi peminjaman barang.
-        </p>
+            {{-- LEFT --}}
+            <div class="grid grid-cols-1 md:grid-cols-10 gap-3 flex-1">
 
-    </div>
+                {{-- Search --}}
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Pencarian</label>
+                    <input type="text" name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari barang..."
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm">
+                </div>
 
-<div class="flex gap-2">
+                {{-- Status (diperkecil) --}}
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Status</label>
+                    <select name="status"
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm">
+                        <option value="">Semua</option>
+                        <option value="pending" {{ request('status')=='pending'?'selected':'' }}>Pending</option>
+                        <option value="approved" {{ request('status')=='approved'?'selected':'' }}>Approved</option>
+                        <option value="returned" {{ request('status')=='returned'?'selected':'' }}>Returned</option>
+                        <option value="rejected" {{ request('status')=='rejected'?'selected':'' }}>Rejected</option>
+                    </select>
+                </div>
 
-    <a href="{{ route('reports.pdf', request()->query()) }}"
-        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow">
+                {{-- User --}}
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">User</label>
+                    <select name="user"
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm">
+                        <option value="">Semua</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}"
+                                {{ request('user')==$user->id?'selected':'' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-        Export PDF
+                {{-- Date --}}
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Tanggal</label>
+                    <input type="date" name="date"
+                        value="{{ request('date') }}"
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm">
+                </div>
 
-    </a>
+                {{-- Buttons (dibesarin biar aman) --}}
+                <div class="md:col-span-2 flex items-end gap-2">
+                    <button type="submit"
+                        class="flex-1 h-10 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">
+                        Cari
+                    </button>
 
-    <a href="{{ route('reports.excel', request()->query()) }}"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow">
+                    <a href="{{ route('reports.index') }}"
+                        class="h-10 w-10 flex items-center justify-center bg-gray-100 border text-gray-600 rounded-lg hover:bg-gray-200">
+                        <x-heroicon-o-arrow-path class="w-4 h-4"/>
+                    </a>
+                </div>
 
-        Export Excel
+            </div>
 
-    </a>
+            {{-- RIGHT --}}
+            <div class="flex gap-2 shrink-0">
+
+                <a href="{{ route('reports.pdf', request()->query()) }}"
+                   class="flex items-center gap-2 bg-red-600 text-white px-4 h-10 rounded-xl text-sm hover:bg-red-700">
+                    <x-heroicon-o-arrow-down-tray class="w-4 h-4"/>
+                    PDF
+                </a>
+
+                <a href="{{ route('reports.excel', request()->query()) }}"
+                   class="flex items-center gap-2 bg-green-600 text-white px-4 h-10 rounded-xl text-sm hover:bg-green-700">
+                    <x-heroicon-o-table-cells class="w-4 h-4"/>
+                    Excel
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
 
 </div>
 
-</div>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-{{-- FILTER --}}
-<form
-    method="GET"
-    action="{{ route('reports.index') }}"
-    class="bg-white rounded-xl shadow p-4 mb-6">
+    <table class="w-full text-sm">
 
-    <div class="grid md:grid-cols-4 gap-4">
+        {{-- HEADER --}}
+        <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
+            <tr>
+                <th class="px-4 py-2 text-left">Peminjam</th>
+                <th class="py-2 text-left">Barang</th>
+                <th class="w-20 py-2 text-center">Qty</th>
+                <th class="w-28 py-2 text-center">Status</th>
+                <th class="w-32 py-2 text-center">Tanggal</th>
+            </tr>
+        </thead>
 
-        <input
-            type="text"
-            name="search"
-            value="{{ request('search') }}"
-            placeholder="Cari Barang..."
-            class="border rounded-lg px-3 py-2">
+        {{-- BODY --}}
+        <tbody class="divide-y divide-gray-100">
 
-        <select
-            name="status"
-            class="border rounded-lg px-3 py-2">
+        @forelse($borrowings as $borrowing)
 
-            <option value="">Semua Status</option>
+            @foreach($borrowing->details as $detail)
 
-            <option value="pending"
-                {{ request('status')=='pending' ? 'selected' : '' }}>
-                Pending
-            </option>
+            <tr class="hover:bg-gray-50 transition">
 
-            <option value="approved"
-                {{ request('status')=='approved' ? 'selected' : '' }}>
-                Approved
-            </option>
+                {{-- USER --}}
+                <td class="px-4 py-2">
+                    <p class="font-medium text-gray-700">
+                        {{ $borrowing->user->name }}
+                    </p>
+                </td>
 
-            <option value="returned"
-                {{ request('status')=='returned' ? 'selected' : '' }}>
-                Returned
-            </option>
+                {{-- BARANG --}}
+                <td class="py-2 text-gray-500">
+                    {{ $detail->product->name }}
+                </td>
 
-            <option value="rejected"
-                {{ request('status')=='rejected' ? 'selected' : '' }}>
-                Rejected
-            </option>
+                {{-- QTY --}}
+                <td class="text-center py-2 text-gray-600">
+                    {{ $detail->quantity }}
+                </td>
 
-        </select>
+                {{-- STATUS --}}
+                <td class="text-center py-2">
+                    @switch($borrowing->status)
 
-        <select
-            name="user"
-            class="border rounded-lg px-3 py-2">
+                        @case('pending')
+                            <span class="text-xs font-medium text-yellow-600">
+                                Pending
+                            </span>
+                        @break
 
-            <option value="">Semua User</option>
+                        @case('approved')
+                            <span class="text-xs font-medium text-blue-600">
+                                Approved
+                            </span>
+                        @break
 
-            @foreach($users as $user)
+                        @case('returned')
+                            <span class="text-xs font-medium text-green-600">
+                                Returned
+                            </span>
+                        @break
 
-                <option
-                    value="{{ $user->id }}"
-                    {{ request('user')==$user->id ? 'selected' : '' }}>
+                        @case('rejected')
+                            <span class="text-xs font-medium text-red-600">
+                                Rejected
+                            </span>
+                        @break
 
-                    {{ $user->name }}
+                    @endswitch
+                </td>
 
-                </option>
+                {{-- TANGGAL --}}
+                <td class="text-center py-2 text-gray-500 text-xs">
+                    {{ \Carbon\Carbon::parse($borrowing->borrow_date)->format('d M Y') }}
+                </td>
+
+            </tr>
 
             @endforeach
 
-        </select>
+        @empty
 
-        <input
-            type="date"
-            name="date"
-            value="{{ request('date') }}"
-            class="border rounded-lg px-3 py-2">
+        <tr>
+            <td colspan="5" class="py-12 text-center">
 
-    </div>
+                <div class="flex flex-col items-center gap-2">
 
-    <div class="mt-4 flex gap-2">
+                    <div class="text-gray-300">
+                        <x-heroicon-o-clipboard-document-list class="w-10 h-10"/>
+                    </div>
 
-        <button
-            class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg">
+                    <p class="text-gray-500 font-medium">
+                        Belum ada data laporan
+                    </p>
 
-            Filter
+                    <p class="text-gray-400 text-sm">
+                        Data peminjaman akan muncul di sini
+                    </p>
 
-        </button>
+                </div>
 
-        <a href="{{ route('reports.index') }}"
-            class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg">
+            </td>
+        </tr>
 
-            Reset
+        @endforelse
 
-        </a>
+        </tbody>
 
-    </div>
+    </table>
 
-</form>
-
-{{-- SUMMARY --}}
-<div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
-
-    <div class="bg-white rounded-xl shadow p-5">
-
-        <p class="text-gray-500 text-sm">
-            Total Borrowing
-        </p>
-
-        <h2 class="text-3xl font-bold text-red-600 mt-2">
-
-            {{ $totalBorrowing }}
-
-        </h2>
-
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-5">
-
-        <p class="text-gray-500 text-sm">
-            Approved
-        </p>
-
-        <h2 class="text-3xl font-bold text-blue-600 mt-2">
-
-            {{ $totalApproved }}
-
-        </h2>
-
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-5">
-
-        <p class="text-gray-500 text-sm">
-            Returned
-        </p>
-
-        <h2 class="text-3xl font-bold text-green-600 mt-2">
-
-            {{ $totalReturned }}
-
-        </h2>
-
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-5">
-
-        <p class="text-gray-500 text-sm">
-            Rejected
-        </p>
-
-        <h2 class="text-3xl font-bold text-red-500 mt-2">
-
-            {{ $totalRejected }}
-
-        </h2>
-
-    </div>
-
-</div> 
-
-        <div class="bg-white rounded-xl shadow overflow-x-auto">
-
-            <table class="w-full">
-
-                <thead class="bg-red-600 text-white">
-
-                    <tr>
-
-                        <th class="p-3 text-left">
-                            Peminjam
-                        </th>
-
-                        <th class="p-3 text-left">
-                            Barang
-                        </th>
-
-                        <th class="p-3 text-center">
-                            Qty
-                        </th>
-
-                        <th class="p-3 text-center">
-                            Status
-                        </th>
-
-                        <th class="p-3 text-center">
-                            Tanggal
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                @forelse($borrowings as $borrowing)
-
-                    @foreach($borrowing->details as $detail)
-
-                        <tr class="border-b hover:bg-gray-50">
-
-                            <td class="p-3">
-
-                                {{ $borrowing->user->name }}
-
-                            </td>
-
-                            <td class="p-3">
-
-                                {{ $detail->product->name }}
-
-                            </td>
-
-                            <td class="p-3 text-center">
-
-                                {{ $detail->quantity }}
-
-                            </td>
-
-                            <td class="p-3 text-center">
-
-                                @switch($borrowing->status)
-
-                                    @case('pending')
-                                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs">
-                                            Pending
-                                        </span>
-                                    @break
-
-                                    @case('approved')
-                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                                            Approved
-                                        </span>
-                                    @break
-
-                                    @case('returned')
-                                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-                                            Returned
-                                        </span>
-                                    @break
-
-                                    @case('rejected')
-                                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs">
-                                            Rejected
-                                        </span>
-                                    @break
-
-                                @endswitch
-
-                            </td>
-
-                            <td class="p-3 text-center">
-
-                                {{ \Carbon\Carbon::parse($borrowing->borrow_date)->format('d M Y') }}
-
-                            </td>
-
-                        </tr>
-
-                    @endforeach
-
-                @empty
-
-                    <tr>
-
-                        <td colspan="5"
-                            class="text-center py-10 text-gray-500">
-
-                            Belum ada data laporan.
-
-                        </td>
-
-                    </tr>
-
-                @endforelse
-
-                </tbody>
-
-            </table>
-
-        </div>
+</div>
 
         <div class="mt-5">
 
