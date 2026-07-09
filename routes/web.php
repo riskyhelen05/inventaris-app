@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BorrowingController;
@@ -17,34 +17,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard
+    | Dashboard (Semua Role)
     |--------------------------------------------------------------------------
     */
+
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Role
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/admin', fn() => 'Admin Only');
-    });
+    Route::get('/search', [DashboardController::class, 'search'])
+        ->name('search');
 
-    Route::middleware('role:staff')->group(function () {
-        Route::get('/staff', fn() => 'Staff Only');
-    });
+    Route::get('/notifications', [DashboardController::class, 'notifications'])
+        ->name('notifications');
 
-    Route::middleware('role:manager')->group(function () {
-        Route::get('/manager', fn() => 'Manager Only');
-    });
 
     /*
     |--------------------------------------------------------------------------
-    | Profile
+    | Profile (Semua Role)
     |--------------------------------------------------------------------------
     */
+
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
 
@@ -54,57 +46,124 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Products
-    |--------------------------------------------------------------------------
-    */
-    Route::resource('products', ProductController::class);
 
     /*
     |--------------------------------------------------------------------------
-    | Categories
+    | Admin Only
     |--------------------------------------------------------------------------
     */
-    Route::resource('categories', CategoryController::class);
+
+    Route::middleware('role:admin')->group(function () {
+
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+            ->name('activity.logs');
+
+        Route::get('/activity', [ActivityLogController::class, 'index'])
+            ->name('activity.index');
+    });
+
 
     /*
     |--------------------------------------------------------------------------
-    | Borrowings
+    | Admin & Manager (Laporan)
     |--------------------------------------------------------------------------
     */
-    Route::resource('borrowings', BorrowingController::class);
 
-    Route::post('/borrowings/{id}/approve', [BorrowingController::class, 'approve'])
-        ->name('borrowings.approve');
+    Route::middleware('role:admin|manager')->group(function () {
 
-    Route::post('/borrowings/{id}/reject', [BorrowingController::class, 'reject'])
-        ->name('borrowings.reject');
+        Route::get('/reports', [ReportController::class, 'index'])
+            ->name('reports.index');
 
-    Route::post('/borrowings/{id}/return', [BorrowingController::class, 'returnItem'])
-        ->name('borrowings.return');
+        Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])
+            ->name('reports.pdf');
+
+        Route::get('/reports/excel', [ReportController::class, 'exportExcel'])
+            ->name('reports.excel');
+    });
+
 
     /*
     |--------------------------------------------------------------------------
-    | Activity Logs
+    | Admin & Staff (Master Data)
     |--------------------------------------------------------------------------
     */
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
-        ->name('activity.logs');
 
-    /*
+    Route::middleware('role:admin|staff')->group(function () {
+
+        Route::resource('categories', CategoryController::class);
+    });
+
+ /*
     |--------------------------------------------------------------------------
-    | Reports
+    | BORROWINGS
     |--------------------------------------------------------------------------
     */
-    Route::get('/reports', [ReportController::class, 'index'])
-        ->name('reports.index');
 
-    Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])
-        ->name('reports.pdf');
+    // ✅ HANYA USER bisa create
+    Route::middleware('role:user')->group(function () {
 
-    Route::get('/reports/excel', [ReportController::class, 'exportExcel'])
-        ->name('reports.excel');
+        Route::get('/borrowings/create', [BorrowingController::class, 'create'])
+            ->name('borrowings.create');
+
+        Route::post('/borrowings', [BorrowingController::class, 'store'])
+            ->name('borrowings.store');
+    });
+
+    // ✅ SEMUA ROLE bisa lihat
+    Route::middleware('role:admin|staff|manager|user')->group(function () {
+
+        Route::get('/borrowings', [BorrowingController::class, 'index'])
+            ->name('borrowings.index');
+
+        Route::get('/borrowings/{borrowing}', [BorrowingController::class, 'show'])
+            ->name('borrowings.show');
+    });
+
+    // ✅ ADMIN & STAFF (approve dll)
+    Route::middleware('role:admin|staff')->group(function () {
+
+        Route::post('/borrowings/{id}/approve', [BorrowingController::class, 'approve'])
+            ->name('borrowings.approve');
+
+        Route::post('/borrowings/{id}/reject', [BorrowingController::class, 'reject'])
+            ->name('borrowings.reject');
+
+        Route::post('/borrowings/{id}/return', [BorrowingController::class, 'returnItem'])
+            ->name('borrowings.return');
+    });
+
+Route::middleware('auth')->group(function () {
+
+    // Semua role bisa lihat
+    Route::get('/products', [ProductController::class, 'index'])
+        ->name('products.index');
+
+    Route::get('/products/{product}', [ProductController::class, 'show'])
+        ->name('products.show');
+
+    // Hanya admin & staff bisa kelola
+    Route::middleware('role:admin|staff')->group(function () {
+
+        Route::get('/products/create', [ProductController::class, 'create'])
+            ->name('products.create');
+
+        Route::post('/products', [ProductController::class, 'store'])
+            ->name('products.store');
+
+        Route::get('/products/{product}/edit', [ProductController::class, 'edit'])
+            ->name('products.edit');
+
+        Route::put('/products/{product}', [ProductController::class, 'update'])
+            ->name('products.update');
+
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+            ->name('products.destroy');
+
+        Route::get('/products/{product}/print-qr', [ProductController::class, 'printQr'])
+            ->name('products.printQr');
+    });
+
+});
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
