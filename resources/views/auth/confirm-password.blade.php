@@ -1,27 +1,56 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
+
+    <div class="text-center mb-6">
+
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100">
+
+            <x-heroicon-o-lock-closed class="w-7 h-7 text-red-600"/>
+
+        </div>
+
+        <h2 class="mt-4 text-2xl font-bold text-slate-800">
+            Konfirmasi Password
+        </h2>
+
+        <p class="mt-2 text-sm text-slate-500">
+            Demi keamanan akun, silakan masukkan password Anda untuk melanjutkan.
+        </p>
+
     </div>
 
-    <form method="POST" action="{{ route('password.confirm') }}">
+    <form method="POST" action="{{ route('password.confirm') }}" class="space-y-5">
+
         @csrf
 
-        <!-- Password -->
         <div>
-            <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+            <x-input-label
+                for="password"
+                value="Password"
+                class="mb-2"/>
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-text-input
+                id="password"
+                name="password"
+                type="password"
+                class="block w-full rounded-xl"
+                required
+                autocomplete="current-password"/>
+
+            <x-input-error
+                :messages="$errors->get('password')"
+                class="mt-2"/>
+
         </div>
 
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
-        </div>
+        <button
+            type="submit"
+            class="w-full rounded-xl bg-red-600 py-3 font-semibold text-white hover:bg-red-700 transition">
+
+            Konfirmasi Password
+
+        </button>
+
     </form>
+
 </x-guest-layout>

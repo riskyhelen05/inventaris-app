@@ -1,25 +1,62 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+
+    <div class="text-center mb-6">
+
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100">
+
+            <x-heroicon-o-envelope class="w-7 h-7 text-red-600"/>
+
+        </div>
+
+        <h2 class="mt-4 text-2xl font-bold text-slate-800">
+            Lupa Password?
+        </h2>
+
+        <p class="mt-2 text-sm text-slate-500">
+            Masukkan alamat email Anda. Kami akan mengirimkan tautan untuk mengatur ulang password.
+        </p>
+
     </div>
 
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <x-auth-session-status
+        class="mb-4"
+        :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
+
         @csrf
 
-        <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+
+            <x-input-label
+                for="email"
+                value="Email"/>
+
+            <x-text-input
+                id="email"
+                name="email"
+                type="email"
+                class="block mt-2 w-full rounded-xl"
+                :value="old('email')"
+                required
+                autofocus
+                autocomplete="username"/>
+
+            <x-input-error
+                :messages="$errors->get('email')"
+                class="mt-2"/>
+
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
+        <button
+            type="submit"
+            class="w-full rounded-xl bg-red-600 py-3 font-semibold text-white transition hover:bg-red-700">
+
+            Kirim Link Reset Password
+
+        </button>
+
     </form>
+
 </x-guest-layout>

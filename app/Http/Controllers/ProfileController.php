@@ -7,14 +7,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Helpers\ActivityLogger;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -24,36 +22,58 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-    $request->user()->fill($request->validated());
+        $user = $request->user();
+        $oldEmail = $user->email;
 
-    if ($request->user()->isDirty('email')) {
-        $request->user()->email_verified_at = null;
-    }
+        $user->fill($request->validated());
 
-    $request->user()->save();
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
 
-    ActivityLogger::log('update_profile', 'User update profile');
+        $user->save();
 
-    return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        ActivityLogger::log(
+            'update_profile',
+            "User {$user->name} update profile (email: {$oldEmail} -> {$user->email})"
+        );
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     public function destroy(Request $request): RedirectResponse
     {
-    $request->validateWithBag('userDeletion', [
-        'password' => ['required', 'current_password'],
-    ]);
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
 
-    $user = $request->user();
+        $user = $request->user();
 
-    Auth::logout();
+        try {
 
-    $user->delete();
+            DB::transaction(function () use ($user) {
 
-    ActivityLogger::log('delete_account', 'User menghapus akun');
+                ActivityLogger::log(
+                    'delete_account',
+                    "User {$user->name} menghapus akun"
+                );
 
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
+                // optional: cleanup relasi
+                // $user->borrowings()->delete();
 
-    return Redirect::to('/');
+                $user->delete();
+            });
+
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return Redirect::to('/');
+
+        } catch (\Throwable $e) {
+
+            return back()->with('error', 'Gagal menghapus akun');
+        }
     }
 }
