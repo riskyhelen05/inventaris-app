@@ -16,19 +16,28 @@ class Product extends Model
         'image'
     ];
 
-    /**
-     * Relasi ke kategori
-     */
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * Relasi ke detail peminjaman
-     */
     public function borrowingDetails()
     {
         return $this->hasMany(BorrowingDetail::class);
+    }
+
+    public function getConditionLabelAttribute()
+    {
+        return match ($this->condition) {
+            'baik' => 'Baik',
+            'rusak_ringan' => 'Rusak Ringan',
+            'rusak_berat' => 'Rusak Berat',
+            default => ucfirst(str_replace('_', ' ', $this->condition)),
+        };
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('stock', '>', 0);
     }
 }

@@ -1,60 +1,10 @@
 <x-app-layout>
 
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800">
-                    Daftar Produk
-                </h2>
-                <p class="text-gray-500 text-sm">
-                    Kelola seluruh data inventaris barang
-                </p>
-            </div>
+<x-slot name="header">
+    Data Barang
+</x-slot>
 
-            <a href="{{ route('products.create') }}"
-                class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg shadow">
-                + Tambah Barang
-            </a>
-        </div>
-    </x-slot>
-
-
-<div class="p-6">
-
-    {{-- CARD --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
-
-        <div class="bg-white rounded-xl shadow p-5">
-            <p class="text-gray-500 text-sm">Total Barang</p>
-            <h2 class="text-3xl font-bold text-red-600 mt-2">
-                {{ $totalBarang }}
-            </h2>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-5">
-            <p class="text-gray-500 text-sm">Total Stok</p>
-            <h2 class="text-3xl font-bold text-green-600 mt-2">
-                {{ $stokTersedia }}
-            </h2>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-5">
-            <p class="text-gray-500 text-sm">Stok Habis</p>
-            <h2 class="text-3xl font-bold text-red-500 mt-2">
-                {{ $stokHabis }}
-            </h2>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-5">
-            <p class="text-gray-500 text-sm">Kategori</p>
-            <h2 class="text-3xl font-bold text-blue-600 mt-2">
-                {{ $totalKategori }}
-            </h2>
-        </div>
-
-    </div>
-
-
+<div class="space-y-6">
 
     {{-- ALERT --}}
     @if(session('success'))
@@ -69,264 +19,292 @@
         </div>
     @endif
 
+{{-- FILTER --}}
+<div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-6">
 
+    <form method="GET">
 
-    {{-- FILTER --}}
-    <div class="bg-white shadow rounded-xl p-5 mb-5">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
 
-        <form method="GET">
+            {{-- LEFT: INPUT FILTER --}}
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
 
-            <div class="grid md:grid-cols-4 gap-4">
+                {{-- Search --}}
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">
+                        Pencarian
+                    </label>
 
-                <input
-                    type="text"
-                    name="search"
-                    value="{{ request('search') }}"
-                    placeholder="Cari nama / kode barang..."
-                    class="border rounded-lg p-2">
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari nama atau kode barang..."
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500">
+                </div>
 
-                <select
-                    name="category"
-                    class="border rounded-lg p-2">
+                {{-- Kategori --}}
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">
+                        Kategori
+                    </label>
 
-                    <option value="">Semua Kategori</option>
+                    <select
+                        name="category"
+                        class="w-full h-10 rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500">
 
-                    @foreach($categories as $category)
+                        <option value="">Semua</option>
 
-                        <option
-                            value="{{ $category->id }}"
-                            {{ request('category')==$category->id?'selected':'' }}>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}"
+                                {{ request('category') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
 
-                            {{ $category->name }}
+                    </select>
+                </div>
 
-                        </option>
+{{-- Kondisi --}}
+<div class="md:col-span-2">
+    <label class="block text-xs font-medium text-gray-500 mb-1">
+        Kondisi
+    </label>
 
-                    @endforeach
+    <select
+        name="condition"
+        class="w-full h-10 rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500">
 
-                </select>
+        <option value="">Semua</option>
+        <option value="baik" {{ request('condition')=='baik'?'selected':'' }}>Baik</option>
+        <option value="rusak" {{ request('condition')=='rusak'?'selected':'' }}>Rusak</option>
+        <option value="service" {{ request('condition')=='service'?'selected':'' }}>Service</option>
+    </select>
+</div>
 
+{{-- STATUS STOK (BARU) --}}
+<div class="md:col-span-3">
+    <label class="block text-xs font-medium text-gray-500 mb-1">
+        Status Stok
+    </label>
 
-                <select
-                    name="condition"
-                    class="border rounded-lg p-2">
+    <select
+        name="stock"
+        class="w-full h-10 rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500">
 
-                    <option value="">Semua Kondisi</option>
+        <option value="">Semua</option>
+        <option value="available" {{ request('stock')=='available'?'selected':'' }}>
+            Stok Aman
+        </option>
+        <option value="low" {{ request('stock')=='low'?'selected':'' }}>
+            Stok Menipis
+        </option>
+        <option value="out" {{ request('stock')=='out'?'selected':'' }}>
+            Stok Habis
+        </option>
+    </select>
+</div>
 
-                    <option value="baik"
-                        {{ request('condition')=='baik'?'selected':'' }}>
-                        Baik
-                    </option>
+                {{-- Tombol Cari & Reset --}}
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-transparent mb-1">
+                        Action
+                    </label>
 
-                    <option value="rusak"
-                        {{ request('condition')=='rusak'?'selected':'' }}>
-                        Rusak
-                    </option>
+                    <div class="flex gap-2 h-10">
+                        <button
+                            type="submit"
+                            class="flex-1 h-full rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition">
+                            Cari
+                        </button>
 
-                </select>
-
-
-                <div class="flex gap-2">
-
-                    <button
-                        class="bg-red-600 hover:bg-red-700 text-white px-5 rounded-lg">
-
-                        Search
-
-                    </button>
-
-                    <a href="{{ route('products.index') }}"
-                        class="bg-gray-300 hover:bg-gray-400 px-5 rounded-lg flex items-center">
-
-                        Reset
-
-                    </a>
-
+                        <a href="{{ route('products.index') }}"
+                           class="flex-1 h-full rounded-lg bg-gray-100 border border-gray-300 text-gray-700 text-sm font-medium flex items-center justify-center hover:bg-gray-200 transition">
+                            Reset
+                        </a>
+                    </div>
                 </div>
 
             </div>
 
-        </form>
+            {{-- RIGHT: BUTTON TAMBAH --}}
+            <div>
+                <label class="block text-xs font-medium text-transparent mb-1">
+                    Action
+                </label>
 
-    </div>
+@hasanyrole('admin|staff')
+<a href="{{ route('products.create') }}" 
+   class="flex items-center gap-2 bg-red-600 text-white px-5 h-10 rounded-xl font-semibold shadow hover:bg-red-700 transition">
+    Tambah Barang
+</a>
+@endhasanyrole
+            </div>
 
+        </div>
 
+    </form>
 
-    {{-- TABLE --}}
-    <div class="bg-white rounded-xl shadow overflow-hidden">
+</div>
 
-        <table class="w-full">
+{{-- TABLE --}}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-            <thead class="bg-red-600 text-white">
+    <table class="w-full text-sm">
 
+        {{-- HEADER --}}
+        <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
             <tr>
-
-                <th class="p-3">Foto</th>
-
-                <th>Kode</th>
-
-                <th>Nama</th>
-
-                <th>Kategori</th>
-
-                <th>Stok</th>
-
-                <th>Lokasi</th>
-
-                <th>Kondisi</th>
-
-                <th class="text-center">Aksi</th>
-
+                <th class="w-14 py-2 text-center">Foto</th>
+                <th class="w-24 py-2 text-center">Kode</th>
+                <th class="py-2 text-left">Nama Barang</th>
+                <th class="w-32 py-2 text-center">Kategori</th>
+                <th class="w-20 py-2 text-center">Stok</th>
+                <th class="w-28 py-2 text-center">Lokasi</th>
+                <th class="w-28 py-2 text-center">Kondisi</th>
+                <th class="w-28 py-2 text-center">Aksi</th>
             </tr>
+        </thead>
 
-            </thead>
+        {{-- BODY --}}
+        <tbody class="divide-y divide-gray-100">
 
-            <tbody>
+        @forelse($products as $product)
 
-            @forelse($products as $product)
+        <tr class="hover:bg-gray-50 transition">
 
-            <tr class="border-b hover:bg-red-50 transition">
-
-                <td class="p-3">
-
-                    @if($product->image)
-
-                        <img
-                            src="{{ asset('storage/'.$product->image) }}"
-                            class="w-14 h-14 rounded-lg object-cover">
-
-                    @else
-
-                        <div class="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center">
-
-                            📦
-
-                        </div>
-
-                    @endif
-
-                </td>
-
-                <td>{{ $product->kode_barang }}</td>
-
-                <td class="font-semibold">
-                    {{ $product->name }}
-                </td>
-
-                <td>
-                    {{ $product->category->name ?? '-' }}
-                </td>
-
-                <td>
-
-                    @if($product->stock==0)
-
-                        <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs">
-
-                            Habis
-
-                        </span>
-
-                    @elseif($product->stock<5)
-
-                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs">
-
-                            {{ $product->stock }}
-
-                        </span>
-
-                    @else
-
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-
-                            {{ $product->stock }}
-
-                        </span>
-
-                    @endif
-
-                </td>
-
-                <td>
-                    {{ $product->location }}
-                </td>
-
-                <td>
-
-                    @if($product->condition=='baik')
-
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-
-                            Baik
-
-                        </span>
-
-                    @else
-
-                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs">
-
-                            Rusak
-
-                        </span>
-
-                    @endif
-
-                </td>
-
-                <td>
-
-                    <div class="flex justify-center gap-2">
-
-                        <a
-                            href="{{ route('products.edit',$product->id) }}"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
-
-                            Edit
-
-                        </a>
-
-                        <form
-                            action="{{ route('products.destroy',$product->id) }}"
-                            method="POST"
-                            onsubmit="return confirm('Yakin ingin menghapus barang ini?')">
-
-                            @csrf
-                            @method('DELETE')
-
-                            <button
-                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-
-                                Hapus
-
-                            </button>
-
-                        </form>
-
+            {{-- FOTO --}}
+            <td class="text-center py-2">
+                @if($product->image)
+                    <img
+                        src="{{ asset('storage/'.$product->image) }}"
+                        class="w-9 h-9 mx-auto rounded-md object-cover" />
+                @else
+                    <div class="w-9 h-9 mx-auto rounded-md bg-gray-100 flex items-center justify-center text-xs">
+                        <x-heroicon-o-cube class="w-5 h-5 text-gray-400"/>
                     </div>
+                @endif
+            </td>
 
-                </td>
+            {{-- KODE --}}
+            <td class="text-center py-2 text-xs text-gray-500">
+                {{ $product->kode_barang }}
+            </td>
 
-            </tr>
+            {{-- NAMA --}}
+            <td class="py-2">
+                <p class="font-medium text-gray-500 truncate">
+                    {{ $product->name }}
+                </p>
+            </td>
 
-            @empty
+            {{-- KATEGORI --}}
+            <td class="text-center py-2 text-gray-500 text-xs truncate">
+                {{ $product->category->name ?? '-' }}
+            </td>
 
-            <tr>
+            {{-- STOK --}}
+            <td class="text-center py-2">
+                @if($product->stock==0)
+                    <span class="text-xs text-red-500 font-medium">Habis</span>
+                @elseif($product->stock<5)
+                    <span class="text-xs text-yellow-600 font-medium">
+                        {{ $product->stock }}
+                    </span>
+                @else
+                    <span class="text-xs text-green-600 font-medium">
+                        {{ $product->stock }}
+                    </span>
+                @endif
+            </td>
 
-                <td colspan="8" class="text-center py-10 text-gray-400">
+            {{-- LOKASI --}}
+            <td class="text-center py-2 text-gray-500 text-xs truncate">
+                {{ $product->location }}
+            </td>
 
-                    Tidak ada data barang.
+            {{-- KONDISI --}}
+            <td class="text-center py-2">
+                @if($product->condition=='baik')
+                    <span class="text-xs text-green-600 font-medium">Baik</span>
+                @elseif($product->condition=='rusak')
+                    <span class="text-xs text-red-600 font-medium">Rusak</span>
+                @elseif($product->condition=='servis')
+                    <span class="text-xs text-orange-500 font-medium">Servis</span>
+                @else
+                    <span class="text-xs text-gray-500">-</span>
+                @endif
+            </td>
 
-                </td>
+            {{-- AKSI --}}
+            <td class="py-2">
+                <div class="flex justify-center gap-1">
 
-            </tr>
+                    <a href="{{ route('products.edit',$product) }}"
+                       class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-200 transition"
+                       title="Edit">
+                        <x-heroicon-o-pencil-square class="w-4 h-4"/>
+                    </a>
 
-            @endforelse
+                    <a href="{{ route('products.show',$product) }}"
+                       class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-200 transition"
+                       title="QR">
+                        <x-heroicon-o-qr-code class="w-4 h-4"/>
+                    </a>
 
-            </tbody>
+                    <a href="{{ route('products.printQr',$product) }}"
+                       class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-200 transition"
+                       title="Print">
+                        <x-heroicon-o-printer class="w-4 h-4"/>
+                    </a>
 
-        </table>
+                    <form action="{{ route('products.destroy',$product) }}"
+                          method="POST"
+                          onsubmit="return confirm('Yakin ingin menghapus barang ini?')">
+                        @csrf
+                        @method('DELETE')
 
-    </div>
+                        <button
+                            class="w-7 h-7 rounded-md text-gray-500 hover:bg-red-100 hover:text-red-600 transition"
+                            title="Hapus">
+                            <x-heroicon-o-trash class="w-4 h-4"/>
+                        </button>
+                    </form>
 
+                </div>
+            </td>
+
+        </tr>
+
+        @empty
+
+        <tr>
+            <td colspan="8" class="py-12 text-center">
+
+                <div class="flex flex-col items-center gap-2">
+
+                    <div class="text-4xl"><x-heroicon-o-cube class="w-5 h-5 text-gray-400"/></div>
+
+                    <p class="text-gray-500 font-medium">
+                        Belum ada data barang
+                    </p>
+
+                    <p class="text-gray-400 text-sm">
+                        Tambahkan barang untuk mulai mengelola inventaris
+                    </p>
+
+                </div>
+
+            </td>
+        </tr>
+
+        @endforelse
+
+        </tbody>
+
+    </table>
+
+</div>
 
     <div class="mt-6">
 

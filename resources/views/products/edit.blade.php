@@ -1,278 +1,232 @@
 <x-app-layout>
 
     <x-slot name="header">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800">
-                Edit Produk
-            </h2>
-            <p class="text-gray-500 text-sm">
-                Perbarui informasi produk inventaris
-            </p>
-        </div>
+        Edit Produk
     </x-slot>
 
-    <div class="max-w-6xl mx-auto p-6">
+<div class="max-w-7xl mx-auto space-y-6">
 
-        {{-- ERROR --}}
-        @if ($errors->any())
-            <div class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
-                <h3 class="font-semibold text-red-700 mb-2">
-                    Terjadi Kesalahan
-                </h3>
+    {{-- ERROR --}}
+    @if ($errors->any())
+        <div class="rounded-xl border border-red-300 bg-red-50 p-4">
 
-                <ul class="list-disc list-inside text-red-600 text-sm">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+            <h3 class="font-semibold text-red-700 mb-2">
+                Terjadi Kesalahan
+            </h3>
 
+            <ul class="list-disc list-inside text-sm text-red-600">
 
-        <form action="{{ route('products.update',$product->id) }}"
-            method="POST"
-            enctype="multipart/form-data">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
 
-            @csrf
-            @method('PUT')
+            </ul>
 
-            <div class="grid lg:grid-cols-3 gap-6">
+        </div>
+    @endif
 
-                {{-- FORM --}}
-                <div class="lg:col-span-2 bg-white rounded-xl shadow p-6">
+    <form action="{{ route('products.update',$product->id) }}"
+          method="POST"
+          enctype="multipart/form-data">
 
-                    <h3 class="text-lg font-semibold text-red-600 mb-6">
+        @csrf
+        @method('PUT')
+
+        <div class="grid lg:grid-cols-3 gap-6">
+
+            {{-- FORM --}}
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm">
+
+                <div class="border-b px-6 py-4">
+
+                    <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <x-heroicon-o-clipboard-document class="w-5 h-5 text-red-600"/>
                         Informasi Produk
                     </h3>
 
-                    <div class="grid md:grid-cols-2 gap-5">
+                </div>
 
-                        {{-- KODE --}}
-                        <div>
+                <div class="p-6 grid md:grid-cols-2 gap-5">
 
-                            <label class="block mb-2 font-medium">
-                                Kode Barang
-                            </label>
+                    {{-- KODE --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Kode Barang
+                        </label>
 
-                            <input
-                                type="text"
-                                name="kode_barang"
-                                value="{{ old('kode_barang',$product->kode_barang) }}"
-                                class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
+                        <input type="text"
+                               name="kode_barang"
+                               value="{{ old('kode_barang',$product->kode_barang) }}"
+                               class="w-full rounded-xl border-gray-300 py-2.5 focus:ring-red-500 focus:border-red-500"
+                               required>
+                    </div>
+
+                    {{-- NAMA --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Nama Barang
+                        </label>
+
+                        <input type="text"
+                               name="name"
+                               value="{{ old('name',$product->name) }}"
+                               class="w-full rounded-xl border-gray-300 py-2.5 focus:ring-red-500 focus:border-red-500"
+                               required>
+                    </div>
+
+                    {{-- KATEGORI --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Kategori
+                        </label>
+
+                        <select name="category_id"
+                                class="w-full rounded-xl border-gray-300 py-2.5"
                                 required>
 
-                        </div>
+                            <option value="">Pilih Kategori</option>
 
-
-                        {{-- NAMA --}}
-                        <div>
-
-                            <label class="block mb-2 font-medium">
-                                Nama Barang
-                            </label>
-
-                            <input
-                                type="text"
-                                name="name"
-                                value="{{ old('name',$product->name) }}"
-                                class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-red-500"
-                                required>
-
-                        </div>
-
-
-                        {{-- KATEGORI --}}
-                        <div>
-
-                            <label class="block mb-2 font-medium">
-                                Kategori
-                            </label>
-
-                            <select
-                                name="category_id"
-                                class="w-full border rounded-lg p-3"
-                                required>
-
-                                <option value="">
-                                    Pilih Kategori
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}"
+                                    {{ old('category_id',$product->category_id)==$category->id?'selected':'' }}>
+                                    {{ $category->name }}
                                 </option>
+                            @endforeach
 
-                                @foreach($categories as $category)
+                        </select>
+                    </div>
 
-                                    <option
-                                        value="{{ $category->id }}"
-                                        {{ old('category_id',$product->category_id)==$category->id ? 'selected' : '' }}>
+                    {{-- STOK --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Stok
+                        </label>
 
-                                        {{ $category->name }}
+                        <input type="number"
+                               min="0"
+                               name="stock"
+                               value="{{ old('stock',$product->stock) }}"
+                               class="w-full rounded-xl border-gray-300 py-2.5"
+                               required>
+                    </div>
 
-                                    </option>
+                    {{-- LOKASI --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Lokasi Penyimpanan
+                        </label>
 
-                                @endforeach
+                        <input type="text"
+                               name="location"
+                               value="{{ old('location',$product->location) }}"
+                               class="w-full rounded-xl border-gray-300 py-2.5"
+                               required>
+                    </div>
 
-                            </select>
+                    {{-- KONDISI --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Kondisi
+                        </label>
 
-                        </div>
+                        <select name="condition"
+                                class="w-full rounded-xl border-gray-300 py-2.5">
 
+                            <option value="baik"
+                                {{ old('condition',$product->condition)=='baik'?'selected':'' }}>
+                                Baik
+                            </option>
 
-                        {{-- STOCK --}}
-                        <div>
+                            <option value="rusak"
+                                {{ old('condition',$product->condition)=='rusak'?'selected':'' }}>
+                                Rusak
+                            </option>
 
-                            <label class="block mb-2 font-medium">
-                                Stock
-                            </label>
+                            <option value="servis"
+                                {{ old('condition',$product->condition)=='servis'?'selected':'' }}>
+                                Servis
+                            </option>
 
-                            <input
-                                type="number"
-                                name="stock"
-                                min="0"
-                                value="{{ old('stock',$product->stock) }}"
-                                class="w-full border rounded-lg p-3"
-                                required>
-
-                        </div>
-
-
-                        {{-- LOKASI --}}
-                        <div>
-
-                            <label class="block mb-2 font-medium">
-                                Lokasi Penyimpanan
-                            </label>
-
-                            <input
-                                type="text"
-                                name="location"
-                                value="{{ old('location',$product->location) }}"
-                                class="w-full border rounded-lg p-3"
-                                required>
-
-                        </div>
-
-
-                        {{-- KONDISI --}}
-                        <div>
-
-                            <label class="block mb-2 font-medium">
-                                Kondisi
-                            </label>
-
-                            <select
-                                name="condition"
-                                class="w-full border rounded-lg p-3">
-
-                                <option
-                                    value="baik"
-                                    {{ old('condition',$product->condition)=='baik' ? 'selected' : '' }}>
-
-                                    Baik
-
-                                </option>
-
-                                <option
-                                    value="rusak"
-                                    {{ old('condition',$product->condition)=='rusak' ? 'selected' : '' }}>
-
-                                    Rusak
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
+                        </select>
                     </div>
 
                 </div>
 
+            </div>
 
+            {{-- FOTO --}}
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
 
-                {{-- FOTO --}}
-                <div class="bg-white rounded-xl shadow p-6">
-
-                    <h3 class="text-lg font-semibold text-red-600 mb-5">
+                <div class="border-b px-6 py-4">
+                    <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <x-heroicon-o-photo class="w-5 h-5 text-red-600"/>
                         Gambar Produk
                     </h3>
+                </div>
 
-                    <div class="flex justify-center">
+                <div class="p-6 flex flex-col items-center">
 
-                        @if($product->image)
+                    <img id="preview"
+                         src="{{ $product->image ? asset('storage/'.$product->image) : 'https://placehold.co/300x300?text=No+Image' }}"
+                         class="w-40 h-40 rounded-xl border object-cover">
 
-                            <img
-                                id="preview"
-                                src="{{ asset('storage/'.$product->image) }}"
-                                class="w-64 h-64 rounded-lg border object-cover">
+                    <label for="image"
+                           class="mt-5 w-full border-2 border-dashed border-gray-300 rounded-xl p-3 text-center cursor-pointer hover:border-red-500 transition">
 
-                        @else
+                        <div class="text-4xl"><x-heroicon-o-arrow-up-on-square class="w-8 h-8 mx-auto text-slate-400"/></div>
 
-                            <img
-                                id="preview"
-                                src="https://placehold.co/300x300?text=No+Image"
-                                class="w-64 h-64 rounded-lg border object-cover">
+                        <p class="mt-2 font-medium text-gray-700">
+                            Ganti gambar
+                        </p>
 
-                        @endif
+                        <p class="text-xs text-gray-400 mt-1">
+                            JPG / PNG • Maksimal 2 MB
+                        </p>
 
-                    </div>
+                    </label>
 
-
-                    <div class="mt-6">
-
-                        <input
-                            id="image"
-                            type="file"
-                            name="image"
-                            accept="image/*"
-                            class="w-full border rounded-lg p-2">
-
-                    </div>
-
-                    <p class="text-xs text-gray-500 mt-3">
-                        Kosongkan jika tidak ingin mengganti gambar.
-                    </p>
+                    <input id="image"
+                           type="file"
+                           name="image"
+                           accept="image/*"
+                           class="hidden">
 
                 </div>
 
             </div>
 
+        </div>
 
-            <div class="mt-8 flex justify-end gap-3">
+        {{-- BUTTON --}}
+        <div class="flex justify-end gap-3 mt-8">
 
-                <a
-                    href="{{ route('products.index') }}"
-                    class="px-6 py-3 rounded-lg bg-gray-300 hover:bg-gray-400">
+            <a href="{{ route('products.index') }}"
+               class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 border text-gray-700">
+                Batal
+            </a>
 
-                    Batal
+            <button
+                class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium shadow">
+                Update Produk
+            </button>
 
-                </a>
+        </div>
 
-                <button
-                    class="px-6 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow">
+    </form>
 
-                    Update Produk
-
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
+</div>
 
 <script>
-
-document.getElementById('image').addEventListener('change', function(e){
+document.getElementById('image').onchange = function(e){
+    const file = e.target.files[0];
+    if(!file) return;
 
     const reader = new FileReader();
-
     reader.onload = function(){
-
         document.getElementById('preview').src = reader.result;
-
     }
-
-    reader.readAsDataURL(e.target.files[0]);
-
-});
-
+    reader.readAsDataURL(file);
+}
 </script>
 
 </x-app-layout>

@@ -1,16 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-bold text-gray-800">
-            Edit Kategori
-        </h2>
-    </x-slot>
 
-    <div class="max-w-3xl mx-auto p-6">
+<x-slot name="header">
+    Edit Kategori
+</x-slot>
 
-        {{-- Error --}}
+    <div class="max-w-2xl mx-auto p-6">
+
+        {{-- ERROR --}}
         @if ($errors->any())
-            <div class="mb-4 bg-red-100 border border-red-300 text-red-700 rounded-lg p-4">
-                <ul class="list-disc ml-5">
+            <div class="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                <ul class="list-disc ml-5 space-y-1 text-sm">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -18,45 +17,58 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-            <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-4">
-                <h3 class="text-lg font-semibold">
+            {{-- HEADER --}}
+            <div class="bg-gray-50 px-6 py-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-700">
                     Form Edit Kategori
                 </h3>
+                <p class="text-sm text-gray-500">
+                    Perbarui nama kategori sesuai kebutuhan
+                </p>
             </div>
 
-            <form action="{{ route('categories.update',$category->id) }}"
+            {{-- FORM --}}
+            <form action="{{ route('categories.update', $category->id) }}"
                   method="POST"
                   class="p-6 space-y-6">
 
                 @csrf
                 @method('PUT')
 
+                {{-- INPUT --}}
                 <div>
-
-                    <label class="block mb-2 font-medium text-gray-700">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">
                         Nama Kategori
                     </label>
 
                     <input
                         type="text"
                         name="name"
-                        value="{{ old('name',$category->name) }}"
-                        class="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        required>
+                        value="{{ old('name', $category->name) }}"
+                        placeholder="Contoh: Elektronik, ATK, Furniture"
+                        class="w-full h-11 rounded-xl border-gray-300 text-sm 
+                               focus:border-red-500 focus:ring-1 focus:ring-red-500 transition"
+                        required
+                        autofocus>
 
+                    {{-- OPTIONAL helper --}}
+                    <p class="text-xs text-gray-400 mt-1">
+                        Ubah nama kategori sesuai kebutuhan
+                    </p>
                 </div>
 
-                <div class="flex justify-end gap-3">
+                {{-- ACTION --}}
+                <div class="flex justify-end gap-2 pt-4 border-t">
 
                     <a href="{{ route('categories.index') }}"
-                        class="px-5 py-2 rounded-lg border border-gray-300 hover:bg-gray-100">
+                        class="px-4 h-10 flex items-center rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-100 transition">
                         Batal
                     </a>
 
                     <button
-                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg">
+                        class="px-5 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition shadow-sm">
                         Update
                     </button>
 

@@ -1,235 +1,211 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-bold text-gray-800">
-            Manajemen Kategori
-        </h2>
-    </x-slot>
+    
+<x-slot name="header">
+    Kategori
+</x-slot>
 
-    <div class="p-6">
+    <div class="space-y-6">
 
-        {{-- Search + Button --}}
-        <div class="bg-white rounded-xl shadow p-5 mb-6">
+        {{-- FILTER --}}
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-4">
 
-            <div class="flex flex-col md:flex-row justify-between gap-4">
+            <div class="flex flex-col lg:flex-row lg:items-end gap-3">
 
-                <form method="GET" class="flex flex-wrap items-center gap-3">
+                {{-- FORM --}}
+                <form method="GET"
+                    class="grid grid-cols-1 md:grid-cols-12 gap-2 flex-1">
 
-    <input
-        type="text"
-        name="search"
-        value="{{ request('search') }}"
-        placeholder="Cari nama kategori..."
-        class="border rounded-lg px-4 py-2 w-64">
+                {{-- SEARCH --}}
+                <div class="md:col-span-5">
+                    <label class="text-xs text-gray-500 block mb-1">
+                        Pencarian
+                    </label>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari kategori..."
+                        class="w-full h-9 rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500">
+                </div>
 
-    <select
-        name="product_filter"
-        class="border rounded-lg px-3 py-2">
+                {{-- STATUS --}}
+                <div class="md:col-span-3">
+                    <label class="text-xs text-gray-500 block mb-1">
+                        Status
+                    </label>
+                    <select name="product_filter"
+                        class="w-full h-9 rounded-lg border-gray-300 text-sm focus:ring-red-500">
+                        <option value="">Semua</option>
+                        <option value="used" @selected(request('product_filter')=='used')>
+                            Memiliki Produk
+                        </option>
+                        <option value="empty" @selected(request('product_filter')=='empty')>
+                            Belum Dipakai
+                        </option>
+                    </select>
+                </div>
 
-        <option value="">Semua</option>
+                {{-- SORT --}}
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 block mb-1">
+                        Urutkan
+                    </label>
+                    <select name="sort"
+                        class="w-full h-9 rounded-lg border-gray-300 text-sm focus:ring-red-500">
+                        <option value="">Semua</option>
+                        <option value="latest" @selected(request('sort')=='latest')>Terbaru</option>
+                        <option value="oldest" @selected(request('sort')=='oldest')>Terlama</option>
+                        <option value="az" @selected(request('sort')=='az')>A-Z</option>
+                        <option value="za" @selected(request('sort')=='za')>Z-A</option>
+                    </select>
+                </div>
 
-        <option value="used"
-            @selected(request('product_filter')=='used')>
-            Memiliki Produk
-        </option>
+                {{-- BUTTON --}}
+                <div class="md:col-span-2 flex gap-2 items-end">
 
-        <option value="empty"
-            @selected(request('product_filter')=='empty')>
-            Belum Dipakai
-        </option>
+                    <button
+                        class="flex-1 h-9 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
+                        Filter
+                    </button>
 
-    </select>
+                    <a href="{{ route('categories.index') }}"
+                        class="flex-1 h-9 bg-gray-100 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center justify-center hover:bg-gray-200 transition">
+                        Reset
+                    </a>
 
-    <select
-        name="sort"
-        class="border rounded-lg px-3 py-2">
+                </div>
 
-        <option value="latest"
-            @selected(request('sort')=='latest')>
-            Terbaru
-        </option>
+            </form>
 
-        <option value="oldest"
-            @selected(request('sort')=='oldest')>
-            Terlama
-        </option>
+        {{-- TAMBAH --}}
+        <a href="{{ route('categories.create') }}"
+            class="h-9 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex items-center justify-center whitespace-nowrap transition">
+            Tambah Kategori
+        </a>
 
-        <option value="az"
-            @selected(request('sort')=='az')>
-            A-Z
-        </option>
+    </div>
 
-        <option value="za"
-            @selected(request('sort')=='za')>
-            Z-A
-        </option>
+</div>
 
-    </select>
+        {{-- TABLE --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
-    <button
-        class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg">
-        Filter
-    </button>
+            <table class="w-full text-sm">
 
-    <a href="{{ route('categories.index') }}"
-        class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg">
-        Reset
-    </a>
-
-</form>
-
-                <a href="{{ route('categories.create') }}"
-                    class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-center">
-                    + Tambah Kategori
-                </a>
-
-            </div>
-
-        </div>
-
-        {{-- Table --}}
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-
-            <table class="w-full">
-
-                <thead class="bg-red-600 text-white">
-
+                {{-- HEADER --}}
+                <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                     <tr>
-
-                        <th class="p-4 text-left">No</th>
-
-                        <th class="p-4 text-left">
-                            Nama Kategori
-                        </th>
-
-                        <th class="p-4 text-center">
-                            Jumlah Produk
-                        </th>
-
-                        <th class="p-4 text-center">
-                            Dibuat
-                        </th>
-
-                        <th class="p-4 text-center">
-                            Aksi
-                        </th>
-
+                        <th class="w-12 py-2 text-center">No</th>
+                        <th class="py-2 text-left">Nama Kategori</th>
+                        <th class="w-24 py-2 text-center">Produk</th>
+                        <th class="w-32 py-2 text-center">Dibuat</th>
+                        <th class="w-24 py-2 text-center">Aksi</th>
                     </tr>
-
                 </thead>
 
-                <tbody>
+                {{-- BODY --}}
+                <tbody class="divide-y divide-gray-100">
 
-                    @forelse($categories as $category)
+                @forelse($categories as $category)
 
-                    <tr class="border-b hover:bg-red-50 transition">
+                    <tr class="hover:bg-gray-50 transition">
 
-                        <td class="p-4">
-                            {{ $loop->iteration + ($categories->currentPage()-1) * $categories->perPage() }}
-                        </td>
+                {{-- NO --}}
+                <td class="text-center py-2 text-xs text-gray-500">
+                    {{ $loop->iteration + ($categories->currentPage()-1) * $categories->perPage() }}
+                </td>
 
-                        <td class="p-4 font-semibold">
-                            {{ $category->name }}
-                        </td>
+                {{-- NAMA --}}
+                <td class="py-2">
+                    <p class="font-medium text-gray-700 truncate">
+                        {{ $category->name }}
+                    </p>
+                </td>
 
-                        <td class="p-4 text-center">
+                {{-- PRODUK --}}
+                <td class="text-center py-2">
+                    @if($category->products_count == 0)
+                        <span class="text-xs text-gray-400">
+                            0
+                        </span>
+                    @else
+                        <span class="text-xs font-semibold text-green-600">
+                            {{ $category->products_count }}
+                        </span>
+                    @endif
+                </td>
 
-    @if($category->products_count == 0)
+                {{-- TANGGAL --}}
+                <td class="text-center py-2 text-xs text-gray-500">
+                    {{ $category->created_at?->format('d M Y') ?? '-' }}
+                </td>
 
-        <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">
-            Belum digunakan
-        </span>
+                {{-- AKSI --}}
+                <td class="py-2">
+                    <div class="flex justify-center gap-1">
 
-    @else
+                        {{-- EDIT --}}
+                        <a href="{{ route('categories.edit',$category) }}"
+                            class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-200 transition"
+                            title="Edit">
+                            <x-heroicon-o-pencil-square class="w-4 h-4"/>
+                        </a>
 
-        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-            {{ $category->products_count }} Produk
-        </span>
+                        {{-- DELETE --}}
+                        <form action="{{ route('categories.destroy',$category) }}"
+                            method="POST"
+                            onsubmit="return confirm('Yakin ingin menghapus kategori ini?')">
+                            @csrf
+                            @method('DELETE')
 
-    @endif
+                            <button
+                                class="w-7 h-7 rounded-md text-gray-500 hover:bg-red-100 hover:text-red-600 transition"
+                                title="Hapus">
+                                <x-heroicon-o-trash class="w-4 h-4"/>
+                            </button>
+                        </form>
 
-</td>
+                    </div>
+                </td>
 
-                        <td class="p-4 text-center text-gray-500">
-                            {{ $category->created_at?->format('d M Y') ?? '-' }}
-                        </td>
+            </tr>
 
-                        <td class="p-4">
+        @empty
 
-                            <div class="flex justify-center gap-2">
+        <tr>
+            <td colspan="5" class="py-12 text-center">
 
-                                <a href="{{ route('categories.edit',$category) }}"
-                                    class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded">
-                                    Edit
-                                </a>
+                <div class="flex flex-col items-center gap-2">
 
-                                <form
-class="delete-form"
-action="{{ route('categories.destroy',$category) }}"
-method="POST">
+                    <div class="text-gray-300">
+                        <x-heroicon-o-folder class="w-10 h-10"/>
+                    </div>
 
-                                    @csrf
-                                    @method('DELETE')
+                    <p class="text-gray-500 font-medium">
+                        Belum ada kategori
+                    </p>
 
-                                    <button
-type="button"
-class="delete-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-Hapus
-</button>
+                    <p class="text-gray-400 text-sm">
+                        Tambahkan kategori untuk mulai mengelola data
+                    </p>
 
-                                </form>
+                </div>
 
-                            </div>
+            </td>
+        </tr>
 
-                        </td>
+        @endforelse
 
-                    </tr>
+        </tbody>
 
-                    @empty
+    </table>
 
-                    <tr>
-
-<td colspan="5" class="text-center py-12">
-
-<div class="flex flex-col items-center">
-
-<div class="text-6xl mb-3">
-📂
 </div>
 
-<h3 class="text-lg font-semibold text-gray-600">
-Belum ada kategori
-</h3>
-
-<p class="text-gray-400">
-Silakan tambahkan kategori baru.
-</p>
-
-<a href="{{ route('categories.create') }}"
-class="mt-4 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg">
-
-+ Tambah Kategori
-
-</a>
-
-</div>
-
-</td>
-
-</tr>
-
-                    @endforelse
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        {{-- Pagination --}}
-        <div class="mt-6">
+        {{-- PAGINATION --}}
+        <div class="pt-2">
             {{ $categories->links() }}
         </div>
 
     </div>
-
 </x-app-layout>

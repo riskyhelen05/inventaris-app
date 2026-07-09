@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\ActivityLogger;
 
 class CategoryController extends Controller
 {
+    public function __construct()
+    {
+        // hanya admin & staff
+        $this->middleware('role:admin|staff');
+    }
+
     /**
      * Display kategori
      */
@@ -22,24 +27,20 @@ class CategoryController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Filter jumlah produk
+        // Filter jumlah produk (AMAN tanpa having)
         if ($request->filled('product_filter')) {
 
-            switch ($request->product_filter) {
+            if ($request->product_filter === 'empty') {
+                $query->doesntHave('products');
+            }
 
-                case 'empty':
-                    $query->having('products_count', '=', 0);
-                    break;
-
-                case 'used':
-                    $query->having('products_count', '>', 0);
-                    break;
+            if ($request->product_filter === 'used') {
+                $query->has('products');
             }
         }
 
         // Sorting
         switch ($request->sort) {
-
             case 'az':
                 $query->orderBy('name');
                 break;
@@ -65,7 +66,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Form tambah kategori
+     * Form tambah
      */
     public function create()
     {
@@ -73,7 +74,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Simpan kategori
+     * Simpan
      */
     public function store(Request $request)
     {
@@ -81,13 +82,12 @@ class CategoryController extends Controller
             'name' => 'required|max:100|unique:categories,name'
         ]);
 
-DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated) {
 
-    $category = Category::create($validated);
+            $category = Category::create($validated);
 
-        ActivityLogger::createCategory($category->name);
-
-});
+            ActivityLogger::createCategory($category->name);
+        });
 
         return redirect()
             ->route('categories.index')
@@ -103,7 +103,7 @@ DB::transaction(function () use ($validated) {
     }
 
     /**
-     * Update kategori
+     * Update
      */
     public function update(Request $request, Category $category)
     {
@@ -111,15 +111,14 @@ DB::transaction(function () use ($validated) {
             'name' => 'required|max:100|unique:categories,name,' . $category->id,
         ]);
 
-DB::transaction(function () use ($validated, $category) {
+        DB::transaction(function () use ($validated, $category) {
 
-    $oldName = $category->name;
+            $oldName = $category->name;
 
-$category->update($validated);
+            $category->update($validated);
 
-ActivityLogger::updateCategory($oldName, $category->name);
-
-});
+            ActivityLogger::updateCategory($oldName, $category->name);
+        });
 
         return redirect()
             ->route('categories.index')
@@ -127,24 +126,23 @@ ActivityLogger::updateCategory($oldName, $category->name);
     }
 
     /**
-     * Hapus kategori
+     * Hapus
      */
     public function destroy(Category $category)
     {
-        if ($category->products()->count() > 0) {
+        if ($category->products()->exists()) {
             return back()->with(
                 'error',
-                'Kategori tidak dapat dihapus karena masih digunakan oleh produk.'
+                'Kategori tidak dapat dihapus karena masih digunakan.'
             );
         }
 
-DB::transaction(function () use ($category) {
+        DB::transaction(function () use ($category) {
 
-    ActivityLogger::deleteCategory($category->name);
+            ActivityLogger::deleteCategory($category->name);
 
-$category->delete();
-
-});
+            $category->delete();
+        });
 
         return redirect()
             ->route('categories.index')
