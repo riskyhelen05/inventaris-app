@@ -6,21 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('activity_logs', function (Blueprint $table) {
-            $table->string('ip_address', 45)->nullable()->after('description');
-            $table->text('user_agent')->nullable()->after('ip_address');
+            $table->json('old_data')->nullable();
+            $table->json('new_data')->nullable();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('activity_logs', function (Blueprint $table) {
-            $table->dropColumn([
-                'ip_address',
-                'user_agent',
-            ]);
-        });
+            $table->dropColumn(['old_data', 'new_data']);
+    });
     }
 };

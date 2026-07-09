@@ -6,29 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActivityLog extends Model
 {
-protected $fillable = [
-    'action',
-    'user_id',
-    'description',
-    'ip_address',
-    'user_agent'
-];
+    protected $fillable = [
+        'action',
+        'user_id',
+        'description',
+        'ip_address',
+        'user_agent',
+        'old_data',
+        'new_data',
+    ];
 
-    /**
-     * Relasi ke user
-     */
+    protected $casts = [
+        'old_data' => 'array',
+        'new_data' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Helper label action (biar enak di blade)
-     */
-public function getActionLabelAttribute()
-{
-    return match ($this->action) {
-
+    const ACTION_LABELS = [
         'borrow' => 'Peminjaman',
         'approve' => 'Disetujui',
         'return' => 'Dikembalikan',
@@ -41,13 +39,23 @@ public function getActionLabelAttribute()
         'update_category' => 'Update Kategori',
         'delete_category' => 'Hapus Kategori',
 
-        'create_supplier' => 'Tambah Supplier',
-        'update_supplier' => 'Update Supplier',
-        'delete_supplier' => 'Hapus Supplier',
-
         'update_profile' => 'Update Profil',
+    ];
 
-        default => ucfirst(str_replace('_', ' ', $this->action)),
-    };
-}
+    public function getActionLabelAttribute()
+    {
+        return self::ACTION_LABELS[$this->action]
+            ?? ucfirst(str_replace('_', ' ', $this->action));
+    }
+
+    public static function log($action, $description = null)
+    {
+         return self::create([
+            'action'      => $action,
+            'user_id'     => auth()->id(),
+            'description' => $description,
+            'ip_address'  => request()->ip(),
+            'user_agent'  => request()->userAgent(),
+        ]);
+    }
 }

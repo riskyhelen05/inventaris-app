@@ -3,19 +3,28 @@
 namespace App\Helpers;
 
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 
 class ActivityLogger
 {
-    public static function log($action, $description = null): void
-    {
-        ActivityLog::create([
-            'user_id'     => auth()->id(),
+    public static function log(string $action, ?string $description = null, array $extra = []): void
+{
+    try {
+        ActivityLog::create(array_merge([
+            'user_id'     => Auth::id(),
             'action'      => $action,
-            'description' => $description,
-            'ip_address'  => request()->ip(),
-            'user_agent'  => request()->userAgent(),
-        ]);
+            'description' => $description ?? '-',
+            'ip_address'  => Request::ip(),
+            'user_agent'  => Request::userAgent(),
+        ], [
+            'old_data' => $extra['old_data'] ?? null,
+            'new_data' => $extra['new_data'] ?? null, 
+        ]));
+    } catch (\Throwable $e) {
+        report($e);
     }
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -25,17 +34,17 @@ class ActivityLogger
 
     public static function borrow($products): void
     {
-        self::log('borrow', "Mengajukan peminjaman {$products}");
+        self::log('borrow', "Mengajukan peminjaman: {$products}");
     }
 
     public static function approve($products): void
-    {  
-        self::log('approve', "Menyetujui peminjaman {$products}");
+    {
+        self::log('approve', "Menyetujui peminjaman: {$products}");
     }
 
     public static function returned($products): void
     {
-        self::log('return', "Mengembalikan {$products}");
+        self::log('return', "Mengembalikan: {$products}");
     }
 
     /*
@@ -46,20 +55,20 @@ class ActivityLogger
 
     public static function createProduct($name): void
     {
-        self::log('create_product', "Menambahkan produk \"{$name}\"");
+        self::log('create_product', "Menambahkan produk: \"{$name}\"");
     }
 
     public static function updateProduct($oldName, $newName): void
     {
         self::log(
             'update_product',
-            "Mengubah produk \"{$oldName}\" menjadi \"{$newName}\""
+            "Mengubah produk: \"{$oldName}\" → \"{$newName}\""
         );
     }
 
     public static function deleteProduct($name): void
     {
-        self::log('delete_product', "Menghapus produk \"{$name}\"");
+        self::log('delete_product', "Menghapus produk: \"{$name}\"");
     }
 
     /*
@@ -70,43 +79,19 @@ class ActivityLogger
 
     public static function createCategory($name): void
     {
-        self::log('create_category', "Menambahkan kategori \"{$name}\"");
+        self::log('create_category', "Menambahkan kategori: \"{$name}\"");
     }
 
     public static function updateCategory($oldName, $newName): void
     {
         self::log(
             'update_category',
-            "Mengubah kategori \"{$oldName}\" menjadi \"{$newName}\""
+            "Mengubah kategori: \"{$oldName}\" → \"{$newName}\""
         );
     }
 
     public static function deleteCategory($name): void
     {
-        self::log('delete_category', "Menghapus kategori \"{$name}\"");
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Supplier
-    |--------------------------------------------------------------------------
-    */
-
-    public static function createSupplier($name): void
-    {
-        self::log('create_supplier', "Menambahkan supplier \"{$name}\"");
-    }
-
-    public static function updateSupplier($oldName, $newName): void
-    {
-        self::log(
-            'update_supplier',
-            "Mengubah supplier \"{$oldName}\" menjadi \"{$newName}\""
-        );
-    }
-
-    public static function deleteSupplier($name): void
-    {
-        self::log('delete_supplier', "Menghapus supplier \"{$name}\"");
+        self::log('delete_category', "Menghapus kategori: \"{$name}\"");
     }
 }
