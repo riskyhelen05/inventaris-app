@@ -6,6 +6,7 @@ use App\Models\Borrowing;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Carbon\Carbon;
 
 class BorrowingExport implements FromCollection, WithHeadings
 {
@@ -18,15 +19,14 @@ class BorrowingExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $query = Borrowing::with([
-            'user',
-            'details.product'
-        ]);
+        $query = Borrowing::with(['user', 'details.product']);
 
         // Search barang
         if ($this->request->filled('search')) {
-            $query->whereHas('details.product', function ($q) {
-                $q->where('name', 'like', '%' . $this->request->search . '%');
+            $search = $this->request->search;
+
+            $query->whereHas('details.product', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
             });
         }
 
@@ -50,25 +50,27 @@ class BorrowingExport implements FromCollection, WithHeadings
         $rows = collect();
 
         foreach ($borrowings as $borrowing) {
-
             foreach ($borrowing->details as $detail) {
 
                 $rows->push([
+                    // Nama user aman
+                    optional($borrowing->user)->name ?? '-',
 
-                    $borrowing->user->name,
+                    // Nama barang aman
+                    optional($detail->product)->name ?? '-',
 
-                    $detail->product->name,
+                    // Qty aman
+                    $detail->quantity ?? 0,
 
-                    $detail->quantity,
+                    // Status aman
+                    ucfirst($borrowing->status ?? '-'),
 
-                    ucfirst($borrowing->status),
-
-                    $borrowing->borrow_date,
-
+                    // Format tanggal
+                    $borrowing->borrow_date
+                        ? Carbon::parse($borrowing->borrow_date)->format('d-m-Y')
+                        : '-',
                 ]);
-
             }
-
         }
 
         return $rows;
@@ -77,17 +79,11 @@ class BorrowingExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return [
-
             'Peminjam',
-
             'Barang',
-
             'Qty',
-
             'Status',
-
             'Tanggal',
-
         ];
     }
 }

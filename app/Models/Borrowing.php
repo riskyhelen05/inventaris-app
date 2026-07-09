@@ -13,15 +13,36 @@ class Borrowing extends Model
         'status'
     ];
 
-    // 🔗 relasi ke user
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // 🔗 relasi ke detail (INI YANG PENTING)
     public function details()
     {
         return $this->hasMany(BorrowingDetail::class);
+    }
+
+    public function products()
+    {
+        return $this->hasManyThrough(
+            Product::class,
+            BorrowingDetail::class,
+            'borrowing_id',
+            'id',
+            'id',
+            'product_id'
+        );
+    }
+
+    public function getStatusLabelAttribute()
+    {
+        return match ($this->status) {
+            'pending'  => 'Menunggu',
+            'approved' => 'Disetujui',
+            'returned' => 'Dikembalikan',
+            'rejected' => 'Ditolak',
+            default    => ucfirst($this->status),
+        };
     }
 }

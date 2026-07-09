@@ -21,4 +21,9 @@ class BorrowingDetail extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function getTotalAttribute()
+    {
+        return $this->quantity;
+    }
 }

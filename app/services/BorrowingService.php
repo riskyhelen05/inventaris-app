@@ -10,17 +10,23 @@ use Illuminate\Support\Facades\DB;
 
 class BorrowingService
 {
-    /**
-     * Ajukan peminjaman
-     */
+    const PENDING  = 'pending';
+    const APPROVED = 'approved';
+    const RETURNED = 'returned';
+    const REJECTED = 'rejected';
+
     public function borrow($request)
     {
         return DB::transaction(function () use ($request) {
 
+            if (empty($request->products)) {
+                throw new \Exception('Tidak ada produk dipilih.');
+            }
+
             $borrowing = Borrowing::create([
                 'user_id'     => Auth::id(),
                 'borrow_date' => now(),
-                'status'      => 'pending',
+                'status'      => self::PENDING,
             ]);
 
             foreach ($request->products as $item) {
@@ -45,12 +51,18 @@ class BorrowingService
         });
     }
 
-    /**
-     * Approve peminjaman
-     */
     public function approve(Borrowing $borrowing)
     {
         return DB::transaction(function () use ($borrowing) {
+
+            $borrowing = Borrowing::lockForUpdate()
+                ->findOrFail($borrowing->id);
+
+            $borrowing->loadMissing('details');
+
+            if ($borrowing->status !== self::PENDING) {
+                throw new \Exception('Peminjaman sudah diproses.');
+            }
 
             foreach ($borrowing->details as $detail) {
 
@@ -63,31 +75,28 @@ class BorrowingService
                     );
                 }
 
-                $product->decrement(
-                    'stock',
-                    $detail->quantity
-                );
+                $product->decrement('stock', $detail->quantity);
             }
 
             $borrowing->update([
-                'status' => 'approved'
+                'status' => self::APPROVED
             ]);
 
             return $borrowing;
         });
     }
 
-    /**
-     * Return barang
-     */
     public function returnItem(Borrowing $borrowing)
     {
         return DB::transaction(function () use ($borrowing) {
 
-            if ($borrowing->status !== 'approved') {
-                throw new \Exception(
-                    'Barang belum dapat dikembalikan.'
-                );
+            $borrowing = Borrowing::lockForUpdate()
+                ->findOrFail($borrowing->id);
+
+            $borrowing->loadMissing('details');
+
+            if ($borrowing->status !== self::APPROVED) {
+                throw new \Exception('Barang belum dapat dikembalikan.');
             }
 
             foreach ($borrowing->details as $detail) {
@@ -95,15 +104,31 @@ class BorrowingService
                 $product = Product::lockForUpdate()
                     ->findOrFail($detail->product_id);
 
-                $product->increment(
-                    'stock',
-                    $detail->quantity
-                );
+                $product->increment('stock', $detail->quantity);
             }
 
             $borrowing->update([
-                'status'      => 'returned',
+                'status'      => self::RETURNED,
                 'return_date' => now(),
+            ]);
+
+            return $borrowing;
+        });
+    }
+
+    public function reject(Borrowing $borrowing)
+    {
+        return DB::transaction(function () use ($borrowing) {
+
+            $borrowing = Borrowing::lockForUpdate()
+                ->findOrFail($borrowing->id);
+
+            if ($borrowing->status !== self::PENDING) {
+                throw new \Exception('Peminjaman sudah diproses.');
+            }
+
+            $borrowing->update([
+                'status' => self::REJECTED
             ]);
 
             return $borrowing;

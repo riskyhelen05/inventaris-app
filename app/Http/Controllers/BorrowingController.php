@@ -17,68 +17,69 @@ class BorrowingController extends Controller
     public function __construct(BorrowingService $service)
     {
         $this->service = $service;
+
+        $this->middleware('auth');
+
+        $this->middleware('role:admin|staff|manager')->only([
+            'approve',
+            'reject',
+            'returnItem'
+        ]);
     }
 
-    /**
-     * List Borrowing + Search + Filter
-     */
-public function index(Request $request)
-{
-    $query = Borrowing::with([
-        'user',
-        'details.product'
-    ]);
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+        $isAdmin = $user->hasAnyRole(['admin','staff','manager']);
 
-    // Search Barang
-    if ($request->filled('search')) {
-        $query->whereHas('details.product', function ($q) use ($request) {
-            $q->where('name', 'like', '%' . $request->search . '%');
-        });
+        $query = Borrowing::with([
+            'user:id,name',
+            'details.product:id,name,stock'
+        ]);
+
+        if (!$isAdmin) {
+            $query->where('user_id', $user->id);
+        }
+
+        if ($request->filled('search')) {
+            $query->whereHas('details.product', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('user') && $isAdmin) {
+            $query->where('user_id', $request->user);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('borrow_date', $request->date);
+        }
+
+        $borrowings = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $users = $isAdmin
+            ? User::select('id','name')->orderBy('name')->get()
+            : [];
+
+        return view('borrowings.index', compact('borrowings','users'));
     }
 
-    // Filter Status
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-
-    // Filter User
-    if ($request->filled('user')) {
-        $query->where('user_id', $request->user);
-    }
-
-    // Filter Tanggal
-    if ($request->filled('date')) {
-        $query->whereDate('borrow_date', $request->date);
-    }
-
-    $borrowings = $query
-        ->latest()
-        ->paginate(10)
-        ->withQueryString();
-
-    $users = \App\Models\User::orderBy('name')->get();
-
-    return view(
-        'borrowings.index',
-        compact(
-            'borrowings',
-            'users'
-        )
-    );
-}
-    /**
-     * Form Create Borrowing
-     */
     public function create()
     {
-        $products = Product::where('stock', '>', 0)->get();
+        $products = Product::select('id','name','stock')
+            ->where('stock','>',0)
+            ->limit(100)
+            ->get();
 
         return view('borrowings.create', compact('products'));
     }
 
-    /**
-     * Store Borrowing
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -88,146 +89,105 @@ public function index(Request $request)
         ]);
 
         try {
-
             $borrowing = $this->service->borrow($request);
 
-            $borrowing->load('details.product');
+            $borrowing->load('details.product:id,name,stock');
 
             $productNames = $borrowing->details
-                ->map(fn($d) => $d->product->name . ' (x' . $d->quantity . ')')
+                ->map(fn($d) => "{$d->product->name} (x{$d->quantity})")
                 ->implode(', ');
 
             ActivityLogger::borrow($productNames);
 
-            return redirect()
-                ->route('borrowings.index')
+            return redirect()->route('borrowings.index')
                 ->with('success', 'Peminjaman berhasil diajukan.');
 
         } catch (\Throwable $e) {
-
             return back()->with('error', $e->getMessage());
-
         }
     }
 
-    /**
-     * Detail Borrowing
-     */
     public function show($id)
     {
         $borrowing = Borrowing::with([
-            'user',
-            'details.product'
+            'user:id,name',
+            'details.product:id,name,stock' // ✅ TAMBAHKAN stock
         ])->findOrFail($id);
 
-        return view(
-            'borrowings.show',
-            compact('borrowing')
-        );
+        $user = Auth::user();
+        $isAdmin = $user->hasAnyRole(['admin','staff','manager']);
+
+        if (!$isAdmin && $borrowing->user_id !== $user->id) {
+            abort(403);
+        }
+
+        return view('borrowings.show', compact('borrowing'));
     }
 
-    /**
-     * Approve Borrowing
-     */
     public function approve($id)
     {
         try {
+            $borrowing = Borrowing::with('details.product')->findOrFail($id);
 
-            $borrowing = Borrowing::with('details.product')
-                ->findOrFail($id);
-
-            if ($borrowing->status != 'pending') {
-                return back()->with(
-                    'error',
-                    'Peminjaman sudah diproses.'
-                );
+            if ($borrowing->status !== 'pending') {
+                return back()->with('error', 'Peminjaman sudah diproses.');
             }
 
             $this->service->approve($borrowing);
 
-            $productNames = $borrowing->details
-                ->map(fn($d) => $d->product->name)
-                ->implode(', ');
-
-            ActivityLogger::approve($productNames);
-
-            return back()->with(
-                'success',
-                'Peminjaman berhasil disetujui.'
+            ActivityLogger::approve(
+                $borrowing->details->pluck('product.name')->implode(', ')
             );
+
+            return back()->with('success', 'Peminjaman disetujui.');
 
         } catch (\Throwable $e) {
-
             return back()->with('error', $e->getMessage());
-
         }
     }
 
-    /**
-     * Reject Borrowing
-     */
     public function reject($id)
     {
-        $borrowing = Borrowing::with('details.product')
-            ->findOrFail($id);
+        try {
+            $borrowing = Borrowing::with('details.product')->findOrFail($id);
 
-        if ($borrowing->status != 'pending') {
-            return back()->with(
-                'error',
-                'Peminjaman sudah diproses.'
+            if ($borrowing->status !== 'pending') {
+                return back()->with('error', 'Peminjaman sudah diproses.');
+            }
+
+            $this->service->reject($borrowing); // 🔥 pindah ke service
+
+            ActivityLogger::log(
+                'reject',
+                "Menolak: ".$borrowing->details->pluck('product.name')->implode(', ')
             );
+
+            return back()->with('success', 'Ditolak.');
+
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $borrowing->update([
-            'status' => 'rejected'
-        ]);
-
-        $productNames = $borrowing->details
-            ->map(fn($d) => $d->product->name)
-            ->implode(', ');
-
-        ActivityLogger::reject($productNames);
-
-        return back()->with(
-            'success',
-            'Peminjaman berhasil ditolak.'
-        );
     }
 
-    /**
-     * Return Borrowing
-     */
     public function returnItem($id)
     {
         try {
+            $borrowing = Borrowing::with('details.product')->findOrFail($id);
 
-            $borrowing = Borrowing::with('details.product')
-                ->findOrFail($id);
-
-            if ($borrowing->status != 'approved') {
-                return back()->with(
-                    'error',
-                    'Barang belum disetujui atau sudah dikembalikan.'
-                );
+            if ($borrowing->status !== 'approved') {
+                return back()->with('error', 'Belum bisa dikembalikan.');
             }
 
             $this->service->returnItem($borrowing);
 
-            $productNames = $borrowing->details
-                ->map(fn($d) => $d->product->name)
-                ->implode(', ');
-
-            ActivityLogger::returned($productNames);
-
-            return back()->with(
-                'success',
-                'Barang berhasil dikembalikan.'
+            ActivityLogger::returned(
+                $borrowing->details->pluck('product.name')->implode(', ')
             );
 
+            return back()->with('success', 'Berhasil dikembalikan.');
+
         } catch (\Throwable $e) {
-
             return back()->with('error', $e->getMessage());
-
         }
     }
 }
